@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Specification-Title: psi
+Specification-Vendor: vazkii
+Specification-Version: 1
+Implementation-Title: psi
+Implementation-Version: 1.21.1-109
+Implementation-Vendor: vazkii
+Implementation-Timestamp: 2026-08-23T23:08:46+0200
+MixinConfigs: psi.mixins.json
+

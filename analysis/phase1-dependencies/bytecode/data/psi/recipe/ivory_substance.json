@@ -1,0 +1,16 @@
+{
+  "type": "psi:dimension_trick_crafting",
+  "cad": {
+    "count": 1,
+    "id": "psi:cad_assembly_psimetal"
+  },
+  "dimensionKey": "minecraft:the_end",
+  "input": {
+    "tag": "c:gems/quartz"
+  },
+  "output": {
+    "count": 1,
+    "id": "psi:ivory_substance"
+  },
+  "piece": "psi:trick_ebony_ivory"
+}

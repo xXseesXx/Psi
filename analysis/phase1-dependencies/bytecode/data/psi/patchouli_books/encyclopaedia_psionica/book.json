@@ -1,0 +1,16 @@
+{
+  "name": "psi.book.name",
+  "landing_text": "psi.book.landing_text",
+  "i18n": true,
+  "show_progress": false,
+  "book_texture": "psi:textures/gui/book.png",
+  "subtitle": "psi.book.subtitle",
+  "open_sound": "psi:book_open",
+  "flip_sound": "psi:book_flip",
+  "creative_tab": "psi:creative_tab",
+  "use_resource_pack": true,
+  "model": "psi:encyclopaedia_psionica",
+  "macros": {
+    "$(piece)": "$(3)"
+  }
+}

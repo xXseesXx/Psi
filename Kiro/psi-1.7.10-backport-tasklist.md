@@ -6,15 +6,21 @@ Prereq assumed done: repo forked, cloned, `./gradlew build` and `./gradlew runCl
 
 ## Phase 0 — Reference & Environment Setup
 
-- [ ] Tag/branch the working 1.21.1 checkout as read-only reference (`git checkout -b ref/1.21.1-source`), never edit it directly.
-- [ ] Create new branch/repo for the port: `git checkout -b port/1.7.10`.
-- [ ] Set up a second, separate 1.7.10 Forge MDK (Forge 10.13.4.x) as the actual build target — do not try to reuse the 1.21.1 Gradle config.
-- [ ] Confirm the 1.7.10 MDK itself builds and `runClient` launches vanilla Forge before touching Psi code.
+- [x] Tag/branch the working 1.21.1 checkout as read-only reference (`git checkout -b ref/1.21.1-source`), never edit it directly.
+- [x] Create new branch/repo for the port: `git checkout -b port/1.7.10`.
+- [x] Set up a second, separate 1.7.10 Forge MDK (Forge 10.13.4.x) as the actual build target — do not try to reuse the 1.21.1 Gradle config.
+  - **Using GTNH ExampleMod1.7.10 as base** (cloned to `forge-1.7.10-base/`)
+  - Confirmed builds successfully with Java 25 and Gradle
+  - Confirmed `runClient` launches Minecraft 1.7.10 with Forge 10.13.4.1614
+- [x] Confirm the 1.7.10 MDK itself builds and `runClient` launches vanilla Forge before touching Psi code.
 - [ ] Get a reference 1.7.10 mod with similar systems checked out locally for API lookup, e.g.:
   ```
   git clone https://github.com/VazkiiMods/Botania -b 1.7.10-final ref/botania-1.7.10
   ```
-- [ ] Install CLI static-analysis tools: `ripgrep`, `jdeps` (bundled with JDK), optionally `jqassistant`.
+  - **User is cloning Botania separately**
+- [x] Install CLI static-analysis tools: `ripgrep`, `jdeps` (bundled with JDK), optionally `jqassistant`.
+  - ripgrep 15.2.0 installed
+  - jdeps available (bundled with JDK)
 
 ---
 

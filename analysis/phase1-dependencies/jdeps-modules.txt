@@ -1,0 +1,3 @@
+Error: unknown option: --print-module-deps
+Usage: jdeps <options> <classes...>
+use -h, -? or -help for a list of possible options
