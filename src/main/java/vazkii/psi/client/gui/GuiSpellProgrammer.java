@@ -477,8 +477,17 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
+        // Bind the programmer texture for arrow sprites
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
+
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+        // Start batched rendering for all arrows
+        net.minecraft.client.renderer.Tessellator tess = net.minecraft.client.renderer.Tessellator.instance;
+        tess.startDrawingQuads();
 
         // Iterate through all pieces and draw their parameter arrows
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -519,11 +528,14 @@ public class GuiSpellProgrammer extends GuiScreen {
                         percent = (float) index / (count - 1);
                     }
 
-                    // Draw the arrow
-                    drawParamArrow(x, y, side, param.color, percent);
+                    // Add arrow vertices to batch
+                    addParamArrowToBatch(tess, x, y, side, param.color, percent);
                 }
             }
         }
+
+        // Draw all arrows at once
+        tess.draw();
 
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
@@ -558,10 +570,10 @@ public class GuiSpellProgrammer extends GuiScreen {
     }
 
     /**
-     * Draw a single parameter arrow at the specified position with color.
+     * Add a single parameter arrow to the Tessellator batch.
      */
-    private void drawParamArrow(int pieceX, int pieceY, vazkii.psi.api.spell.SpellParam.Side side, int color,
-        float percent) {
+    private void addParamArrowToBatch(net.minecraft.client.renderer.Tessellator tess, int pieceX, int pieceY,
+        vazkii.psi.api.spell.SpellParam.Side side, int color, float percent) {
         // Calculate position on the edge of the piece
         // side.minx/miny/maxx/maxy define the bounding box for arrow placement
         float minX = 4 + side.minx * percent + side.maxx * (1 - percent);
@@ -574,11 +586,9 @@ public class GuiSpellProgrammer extends GuiScreen {
         int screenY = gridTop + pieceY * CELL_SIZE;
 
         // Extract color components
-        float r = ((color >> 16) & 0xFF) / 255.0F;
-        float g = ((color >> 8) & 0xFF) / 255.0F;
-        float b = (color & 0xFF) / 255.0F;
-
-        GL11.glColor4f(r, g, b, 1.0F);
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
 
         // Texture coordinates for the arrow sprite (8x8 pixels)
         float minU = side.u / 256.0F;
@@ -586,14 +596,12 @@ public class GuiSpellProgrammer extends GuiScreen {
         float maxU = (side.u + 8) / 256.0F;
         float maxV = (side.v + 8) / 256.0F;
 
-        // Draw the arrow quad
-        net.minecraft.client.renderer.Tessellator tess = net.minecraft.client.renderer.Tessellator.instance;
-        tess.startDrawingQuads();
+        // Add vertices with color
+        tess.setColorRGBA(r, g, b, 255);
         tess.addVertexWithUV(screenX + minX, screenY + maxY, zLevel, minU, maxV);
         tess.addVertexWithUV(screenX + maxX, screenY + maxY, zLevel, maxU, maxV);
         tess.addVertexWithUV(screenX + maxX, screenY + minY, zLevel, maxU, minV);
         tess.addVertexWithUV(screenX + minX, screenY + minY, zLevel, minU, minV);
-        tess.draw();
     }
 
     private void drawSideConfigPanel(int mouseX, int mouseY) {
