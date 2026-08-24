@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import net.minecraft.util.ResourceLocation;
+
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellPiece;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
@@ -44,7 +46,20 @@ public class SpellPieceRegistry {
             System.err.println("[Psi] Unknown spell piece ID: " + id);
             return null;
         }
-        return factory.apply(spell);
+        SpellPiece piece = factory.apply(spell);
+
+        // Fix registryKey using reflection (piece's constructor sets it based on class name)
+        // We need to override it with the actual registry ID
+        try {
+            java.lang.reflect.Field keyField = SpellPiece.class.getDeclaredField("registryKey");
+            keyField.setAccessible(true);
+            keyField.set(piece, new ResourceLocation(id));
+        } catch (Exception e) {
+            System.err.println("[Psi] Failed to set registryKey for " + id);
+            e.printStackTrace();
+        }
+
+        return piece;
     }
 
     /**

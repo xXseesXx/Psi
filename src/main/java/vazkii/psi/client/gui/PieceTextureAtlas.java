@@ -127,33 +127,27 @@ public class PieceTextureAtlas {
             GL11.glDisable(GL11.GL_TEXTURE_2D);
             GL11.glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
             GL11.glBegin(GL11.GL_QUADS);
-            GL11.glVertex2f(x, y + ICON_SIZE);
-            GL11.glVertex2f(x + ICON_SIZE, y + ICON_SIZE);
-            GL11.glVertex2f(x + ICON_SIZE, y);
-            GL11.glVertex2f(x, y);
+            GL11.glVertex2d(x, y + ICON_SIZE);
+            GL11.glVertex2d(x + ICON_SIZE, y + ICON_SIZE);
+            GL11.glVertex2d(x + ICON_SIZE, y);
+            GL11.glVertex2d(x, y);
             GL11.glEnd();
             GL11.glEnable(GL11.GL_TEXTURE_2D);
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             return;
         }
 
-        // Bind atlas and draw using UV coordinates
+        // Bind atlas and draw using Tessellator (matches Minecraft's GUI rendering)
         bindAtlas();
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        GL11.glBegin(GL11.GL_QUADS);
-        // Top-left
-        GL11.glTexCoord2f(uv.u0, uv.v0);
-        GL11.glVertex2f(x, y);
-        // Bottom-left
-        GL11.glTexCoord2f(uv.u0, uv.v1);
-        GL11.glVertex2f(x, y + uv.height);
-        // Bottom-right
-        GL11.glTexCoord2f(uv.u1, uv.v1);
-        GL11.glVertex2f(x + uv.width, y + uv.height);
-        // Top-right
-        GL11.glTexCoord2f(uv.u1, uv.v0);
-        GL11.glVertex2f(x + uv.width, y);
-        GL11.glEnd();
+
+        net.minecraft.client.renderer.Tessellator tessellator = net.minecraft.client.renderer.Tessellator.instance;
+        tessellator.startDrawingQuads();
+        tessellator.addVertexWithUV(x, y + uv.height, 0, uv.u0, uv.v1); // Bottom-left
+        tessellator.addVertexWithUV(x + uv.width, y + uv.height, 0, uv.u1, uv.v1); // Bottom-right
+        tessellator.addVertexWithUV(x + uv.width, y, 0, uv.u1, uv.v0); // Top-right
+        tessellator.addVertexWithUV(x, y, 0, uv.u0, uv.v0); // Top-left
+        tessellator.draw();
     }
 
     /**
