@@ -9,25 +9,21 @@ package vazkii.psi.common.spell.constant;
 
 import vazkii.psi.api.spell.EnumPieceType;
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellContext;
 import vazkii.psi.api.spell.SpellPiece;
+import vazkii.psi.api.spell.SpellRuntimeException;
 
 /**
- * A constant number value.
- * Stripped version without GUI/rendering for barebones backport.
+ * Number constant piece for spells.
+ * Barebones version for 1.7.10 - just holds a double value.
  */
 public class PieceConstantNumber extends SpellPiece {
 
-    public double value;
+    public double constant = 0.0;
 
     public PieceConstantNumber(Spell spell) {
         super(spell);
-        this.value = 0.0;
-    }
-
-    public PieceConstantNumber(Spell spell, double value) {
-        super(spell);
-        this.value = value;
     }
 
     @Override
@@ -41,12 +37,12 @@ public class PieceConstantNumber extends SpellPiece {
     }
 
     @Override
-    public Object evaluate() {
-        return value;
+    public Object evaluate() throws SpellCompilationException {
+        return constant;
     }
 
     @Override
-    public Object execute(SpellContext context) {
-        return evaluate();
+    public Object execute(SpellContext context) throws SpellRuntimeException {
+        return constant;
     }
 }

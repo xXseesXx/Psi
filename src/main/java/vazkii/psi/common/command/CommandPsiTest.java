@@ -15,15 +15,18 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
-import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.api.spell.SpellContext;
 import vazkii.psi.api.spell.SpellParam;
 import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.common.spell.constant.PieceConstantNumber;
 import vazkii.psi.common.spell.constant.PieceConstantString;
 import vazkii.psi.common.spell.operator.PieceOperatorSum;
+import vazkii.psi.common.spell.selector.PieceSelectorCaster;
+import vazkii.psi.common.spell.selector.PieceSelectorEntityPosition;
 import vazkii.psi.common.spell.selector.PieceSelectorRaycast;
 import vazkii.psi.common.spell.trick.PieceTrickBreakBlock;
 import vazkii.psi.common.spell.trick.PieceTrickDebug;
@@ -114,14 +117,12 @@ public class CommandPsiTest extends CommandBase {
             messageConstant.x = 0;
             messageConstant.y = 0;
             messageConstant.isInGrid = true;
-            messageConstant.initParams();
 
             // Create the debug trick
             PieceTrickDebug debugTrick = new PieceTrickDebug(spell);
             debugTrick.x = 1;
             debugTrick.y = 0;
             debugTrick.isInGrid = true;
-            debugTrick.initParams();
 
             // Link the constant to the trick's target parameter (from the LEFT)
             debugTrick.setParamSide(debugTrick.target, SpellParam.Side.LEFT);
@@ -189,48 +190,57 @@ public class CommandPsiTest extends CommandBase {
         }
 
         try {
-            // Create spell with constants, sum operator, and debug trick
+            // Create spell with proper grid: [Const:num1] [Const:num2]
+            // ↓ ↓
+            // [Operator:Sum] → [Trick:Debug]
             Spell spell = new Spell();
             spell.name = "Math Test";
 
-            // Create context
+            // Create constant pieces for the two numbers
+            PieceConstantNumber const1 = new PieceConstantNumber(spell);
+            const1.constant = value1;
+            const1.x = 0;
+            const1.y = 0;
+            const1.isInGrid = true;
+
+            PieceConstantNumber const2 = new PieceConstantNumber(spell);
+            const2.constant = value2;
+            const2.x = 0;
+            const2.y = 1;
+            const2.isInGrid = true;
+
+            // Create sum operator
+            PieceOperatorSum sumOperator = new PieceOperatorSum(spell);
+            sumOperator.x = 1;
+            sumOperator.y = 0;
+            sumOperator.isInGrid = true;
+            // Link parameters: num1 from TOP (0,0), num2 from BOTTOM (0,1)
+            sumOperator.setParamSide(sumOperator.num1, SpellParam.Side.LEFT);
+            sumOperator.setParamSide(sumOperator.num2, SpellParam.Side.BOTTOM);
+
+            // Create debug trick to display result
+            PieceTrickDebug debugTrick = new PieceTrickDebug(spell);
+            debugTrick.x = 2;
+            debugTrick.y = 0;
+            debugTrick.isInGrid = true;
+            // Link to sum result from LEFT
+            debugTrick.setParamSide(debugTrick.target, SpellParam.Side.LEFT);
+
+            // Place pieces in grid
+            spell.grid.gridData[0][0] = const1;
+            spell.grid.gridData[0][1] = const2;
+            spell.grid.gridData[1][0] = sumOperator;
+            spell.grid.gridData[2][0] = debugTrick;
+
+            // Compile and execute
+            SpellCompiler compiler = new SpellCompiler();
+            CompiledSpell compiled = compiler.compile(spell);
+
             SpellContext context = new SpellContext();
             context.setPlayer(player);
             context.setSpell(spell);
 
-            // Create parameter override hack for barebones execution
-            PieceOperatorSum hackSum = new PieceOperatorSum(spell) {
-
-                @Override
-                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
-                    throws SpellRuntimeException {
-                    if (param == this.num1) {
-                        return (T) (Double) value1;
-                    } else if (param == this.num2) {
-                        return (T) (Double) value2;
-                    }
-                    return null;
-                }
-            };
-            hackSum.initParams();
-
-            // Execute sum
-            final Object result = hackSum.execute(context);
-
-            // Create debug trick wrapper to display result
-            PieceTrickDebug hackDebug = new PieceTrickDebug(spell) {
-
-                @Override
-                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
-                    throws SpellRuntimeException {
-                    if (param == this.target) {
-                        return (T) result;
-                    }
-                    return null;
-                }
-            };
-
-            hackDebug.execute(context);
+            compiled.execute(context);
 
             // Success feedback
             sender.addChatMessage(
@@ -239,6 +249,9 @@ public class CommandPsiTest extends CommandBase {
                         + EnumChatFormatting.RESET
                         + "Math spell executed successfully"));
 
+        } catch (SpellCompilationException e) {
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
         } catch (SpellRuntimeException e) {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
@@ -264,49 +277,47 @@ public class CommandPsiTest extends CommandBase {
         EntityPlayer player = (EntityPlayer) sender;
 
         try {
-            // Create spell with raycast selector and break trick
+            // Create spell with proper grid: [Selector:Raycast] → [Trick:BreakBlock]
             Spell spell = new Spell();
             spell.name = "Break Test";
 
-            // Create context
+            // Create constant for max distance
+            PieceConstantNumber maxDistConst = new PieceConstantNumber(spell);
+            maxDistConst.constant = 32.0;
+            maxDistConst.x = 0;
+            maxDistConst.y = 0;
+            maxDistConst.isInGrid = true;
+
+            // Create raycast selector
+            PieceSelectorRaycast raycast = new PieceSelectorRaycast(spell);
+            raycast.x = 1;
+            raycast.y = 0;
+            raycast.isInGrid = true;
+            // Link maxDist from LEFT
+            raycast.setParamSide(raycast.maxDist, SpellParam.Side.LEFT);
+
+            // Create break trick
+            PieceTrickBreakBlock breakTrick = new PieceTrickBreakBlock(spell);
+            breakTrick.x = 2;
+            breakTrick.y = 0;
+            breakTrick.isInGrid = true;
+            // Link position from LEFT (raycast result)
+            breakTrick.setParamSide(breakTrick.position, SpellParam.Side.LEFT);
+
+            // Place pieces in grid
+            spell.grid.gridData[0][0] = maxDistConst;
+            spell.grid.gridData[1][0] = raycast;
+            spell.grid.gridData[2][0] = breakTrick;
+
+            // Compile and execute
+            SpellCompiler compiler = new SpellCompiler();
+            CompiledSpell compiled = compiler.compile(spell);
+
             SpellContext context = new SpellContext();
             context.setPlayer(player);
             context.setSpell(spell);
 
-            // Create raycast selector with parameter override hack
-            PieceSelectorRaycast hackRaycast = new PieceSelectorRaycast(spell) {
-
-                @Override
-                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
-                    throws SpellRuntimeException {
-                    // Use default max distance (32 blocks)
-                    if (param == this.maxDist) {
-                        return (T) (Double) 32.0;
-                    }
-                    return null;
-                }
-            };
-            hackRaycast.initParams();
-
-            // Execute raycast to get block position
-            final Object blockPos = hackRaycast.execute(context);
-
-            // Create break trick wrapper to use the raycast result
-            PieceTrickBreakBlock hackBreak = new PieceTrickBreakBlock(spell) {
-
-                @Override
-                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
-                    throws SpellRuntimeException {
-                    if (param == this.position) {
-                        return (T) blockPos;
-                    }
-                    return null;
-                }
-            };
-            hackBreak.initParams();
-
-            // Execute break
-            hackBreak.execute(context);
+            compiled.execute(context);
 
             // Success feedback
             sender.addChatMessage(
@@ -314,9 +325,10 @@ public class CommandPsiTest extends CommandBase {
                     EnumChatFormatting.GREEN + "[Psi] "
                         + EnumChatFormatting.RESET
                         + "Break spell executed successfully"));
-            sender.addChatMessage(
-                new ChatComponentText(EnumChatFormatting.GRAY + "Block position: " + blockPos.toString()));
 
+        } catch (SpellCompilationException e) {
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
         } catch (SpellRuntimeException e) {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
@@ -341,47 +353,69 @@ public class CommandPsiTest extends CommandBase {
 
         EntityPlayer player = (EntityPlayer) sender;
 
-        // Create spell and context
-        Spell spell = new Spell();
-        SpellContext context = new SpellContext().setPlayer(player);
-
         try {
-            // Get player's position directly - simpler than using entity selector chain
-            final Vector3 playerPosition = new Vector3(player.posX, player.posY, player.posZ);
+            // Create spell with proper grid: [Const:power] [Caster]
+            // ↓ ↓
+            // [Explode] ← [EntityPos]
+            Spell spell = new Spell();
+            spell.name = "Explode Test";
 
-            // Create explosion at player position
-            final double explosionPower = 3.0; // TNT is 4.0, this is slightly weaker
+            // Grid layout:
+            // [0,0] = powerConst [0,1] = casterSelector
+            // [1,0] = explodeTrick [1,1] = entityPos
+            //
+            // Connections:
+            // explodeTrick.position ← entityPos (BOTTOM)
+            // explodeTrick.power ← powerConst (LEFT)
+            // entityPos.target ← casterSelector (LEFT)
 
-            PieceTrickExplode explodeTrick = new PieceTrickExplode(spell) {
+            PieceConstantNumber powerConst = new PieceConstantNumber(spell);
+            powerConst.constant = 3.0; // TNT is 4.0
+            powerConst.x = 0;
+            powerConst.y = 0;
+            powerConst.isInGrid = true;
 
-                @Override
-                public <T> T getParamValue(SpellContext ctx, vazkii.psi.api.spell.SpellParam<T> param) {
-                    if (param == this.position) {
-                        return (T) playerPosition;
-                    }
-                    if (param == this.power) {
-                        return (T) (Double) explosionPower;
-                    }
-                    return null;
-                }
-            };
-            explodeTrick.initParams();
+            PieceSelectorCaster casterSelector = new PieceSelectorCaster(spell);
+            casterSelector.x = 0;
+            casterSelector.y = 1;
+            casterSelector.isInGrid = true;
 
-            explodeTrick.execute(context);
+            PieceSelectorEntityPosition entityPos = new PieceSelectorEntityPosition(spell);
+            entityPos.x = 1;
+            entityPos.y = 1;
+            entityPos.isInGrid = true;
+            entityPos.setParamSide(entityPos.target, SpellParam.Side.LEFT);
+
+            PieceTrickExplode explodeTrick = new PieceTrickExplode(spell);
+            explodeTrick.x = 1;
+            explodeTrick.y = 0;
+            explodeTrick.isInGrid = true;
+            explodeTrick.setParamSide(explodeTrick.position, SpellParam.Side.BOTTOM);
+            explodeTrick.setParamSide(explodeTrick.power, SpellParam.Side.LEFT);
+
+            // Place pieces in grid
+            spell.grid.gridData[0][0] = powerConst;
+            spell.grid.gridData[0][1] = casterSelector;
+            spell.grid.gridData[1][1] = entityPos;
+            spell.grid.gridData[1][0] = explodeTrick;
+
+            // Compile and execute
+            SpellCompiler compiler = new SpellCompiler();
+            CompiledSpell compiled = compiler.compile(spell);
+
+            SpellContext context = new SpellContext();
+            context.setPlayer(player);
+            context.setSpell(spell);
+
+            compiled.execute(context);
 
             // Success message
             sender.addChatMessage(
                 new ChatComponentText(EnumChatFormatting.GREEN + "[Psi] Explode spell executed successfully"));
-            sender.addChatMessage(
-                new ChatComponentText(
-                    EnumChatFormatting.GRAY + "Explosion position: "
-                        + String.format(
-                            "Vector3{x=%.1f, y=%.1f, z=%.1f}",
-                            playerPosition.x,
-                            playerPosition.y,
-                            playerPosition.z)));
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "Power: " + explosionPower));
 
+        } catch (SpellCompilationException e) {
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
         } catch (SpellRuntimeException e) {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
