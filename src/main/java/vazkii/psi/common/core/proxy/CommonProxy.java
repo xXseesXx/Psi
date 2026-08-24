@@ -19,5 +19,9 @@ public class CommonProxy {
 
     public void postInit(FMLPostInitializationEvent event) {}
 
-    public void serverStarting(FMLServerStartingEvent event) {}
+    public void serverStarting(FMLServerStartingEvent event) {
+        // Register test command
+        event.registerServerCommand(new vazkii.psi.common.command.CommandPsiTest());
+        Psi.logger.info("Registered /psitest command");
+    }
 }
