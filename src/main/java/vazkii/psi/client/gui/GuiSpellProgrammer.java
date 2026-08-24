@@ -300,16 +300,15 @@ public class GuiSpellProgrammer extends GuiScreen {
      * Draw the piece selection overlay.
      */
     private void drawPieceSelectionOverlay(int mouseX, int mouseY) {
-        // Semi-transparent dark background over entire screen
-        drawRect(0, 0, this.width, this.height, 0x88000000);
-
         // Panel dimensions - make it taller for list view
         int panelWidth = 100;
         int panelHeight = 125;
-        int panelX = (this.width - panelWidth) / 2;
-        int panelY = (this.height - panelHeight) / 2;
 
-        // Draw panel background (matching 1.21.1 style)
+        // Position panel to the right of the selected cell (like 1.21.1)
+        int panelX = gridLeft + (selectionTargetX + 1) * CELL_SIZE;
+        int panelY = gridTop;
+
+        // Draw panel background (no full-screen darkening, just the panel itself)
         drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xCC000000);
 
         // Draw search field at top
@@ -338,53 +337,46 @@ public class GuiSpellProgrammer extends GuiScreen {
             }
         }
 
-        // Draw pieces in vertical list
-        int listStartY = panelY + 20;
-        int itemHeight = 18;
-        int maxVisibleItems = 5;
+        // Draw pieces in 5x5 grid (matching 1.21.1)
+        int gridStartX = panelX + 5;
+        int gridStartY = panelY + 20;
+        int buttonSize = 18;
+        int columns = 5;
 
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
         String hoveredPieceTooltip = null;
 
-        for (int i = 0; i < Math.min(filteredPieces.size(), maxVisibleItems); i++) {
+        for (int i = 0; i < filteredPieces.size(); i++) {
             String pieceId = filteredPieces.get(i);
-            int itemY = listStartY + i * itemHeight;
 
-            // Check if mouse is over this item
-            boolean hovered = mouseX >= panelX + 5 && mouseX < panelX + panelWidth - 5
-                && mouseY >= itemY
-                && mouseY < itemY + itemHeight;
+            int col = i % columns;
+            int row = i / columns;
+            int btnX = gridStartX + col * buttonSize;
+            int btnY = gridStartY + row * buttonSize;
 
-            // Item background
+            // Check if mouse is over this button
+            boolean hovered = mouseX >= btnX && mouseX < btnX + buttonSize
+                && mouseY >= btnY
+                && mouseY < btnY + buttonSize;
+
+            // Button background
             if (hovered) {
-                drawRect(panelX + 5, itemY, panelX + panelWidth - 5, itemY + itemHeight, 0xFF5555FF);
+                drawRect(btnX, btnY, btnX + buttonSize, btnY + buttonSize, 0x885555FF);
             }
 
-            // Draw piece icon
+            // Draw piece icon (16x16 centered in 18x18 button)
             String pieceName = pieceId.split(":")[1];
             ResourceLocation pieceTexture = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
 
             try {
                 this.mc.getTextureManager()
                     .bindTexture(pieceTexture);
-                this.drawTexturedModalRect(panelX + 8, itemY + 1, 0, 0, 16, 16);
+                this.drawTexturedModalRect(btnX + 1, btnY + 1, 0, 0, 16, 16);
             } catch (Exception e) {
                 // Fallback: gray square
-                drawRect(panelX + 8, itemY + 1, panelX + 24, itemY + 17, 0xFF808080);
+                drawRect(btnX + 1, btnY + 1, btnX + 17, btnY + 17, 0xFF808080);
             }
-
-            // Draw piece name
-            String displayName = formatPieceName(pieceId);
-            // Truncate if too long
-            if (fontRendererObj.getStringWidth(displayName) > panelWidth - 35) {
-                while (fontRendererObj.getStringWidth(displayName + "...") > panelWidth - 35
-                    && displayName.length() > 0) {
-                    displayName = displayName.substring(0, displayName.length() - 1);
-                }
-                displayName += "...";
-            }
-            fontRendererObj.drawString(displayName, panelX + 28, itemY + 5, 0xFFFFFF);
 
             // Store tooltip for rendering last
             if (hovered) {
@@ -396,7 +388,7 @@ public class GuiSpellProgrammer extends GuiScreen {
         if (filteredPieces.isEmpty()) {
             String noResults = "No pieces found";
             int textX = panelX + (panelWidth - fontRendererObj.getStringWidth(noResults)) / 2;
-            fontRendererObj.drawString(noResults, textX, listStartY + 20, 0x888888);
+            fontRendererObj.drawString(noResults, textX, gridStartY + 20, 0x888888);
         }
 
         // Draw tooltip LAST so it renders on top of everything
@@ -420,11 +412,11 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
-        // Calculate panel position
+        // Calculate panel position (same as in drawPieceSelectionOverlay)
         int panelWidth = 100;
         int panelHeight = 125;
-        int panelX = (this.width - panelWidth) / 2;
-        int panelY = (this.height - panelHeight) / 2;
+        int panelX = gridLeft + (selectionTargetX + 1) * CELL_SIZE;
+        int panelY = gridTop;
 
         // Check if click is inside panel
         boolean insidePanel = mouseX >= panelX && mouseX < panelX + panelWidth
@@ -449,17 +441,19 @@ public class GuiSpellProgrammer extends GuiScreen {
             }
         }
 
-        // Check which piece was clicked in the list
-        int listStartY = panelY + 20;
-        int itemHeight = 18;
-        int maxVisibleItems = 5;
+        // Check which piece was clicked in the 5x5 grid
+        int gridStartX = panelX + 5;
+        int gridStartY = panelY + 20;
+        int buttonSize = 18;
+        int columns = 5;
 
-        for (int i = 0; i < Math.min(filteredPieces.size(), maxVisibleItems); i++) {
-            int itemY = listStartY + i * itemHeight;
+        for (int i = 0; i < filteredPieces.size(); i++) {
+            int col = i % columns;
+            int row = i / columns;
+            int btnX = gridStartX + col * buttonSize;
+            int btnY = gridStartY + row * buttonSize;
 
-            if (mouseX >= panelX + 5 && mouseX < panelX + panelWidth - 5
-                && mouseY >= itemY
-                && mouseY < itemY + itemHeight) {
+            if (mouseX >= btnX && mouseX < btnX + buttonSize && mouseY >= btnY && mouseY < btnY + buttonSize) {
                 // User clicked this piece - place it on the grid
                 placePieceOnGrid(filteredPieces.get(i), selectionTargetX, selectionTargetY);
                 closePieceSelection();
@@ -551,11 +545,9 @@ public class GuiSpellProgrammer extends GuiScreen {
                 return;
             }
 
-            // Right-click on empty cell = Open piece selection
-            if (existingPiece == null) {
-                openPieceSelection(cursorX, cursorY);
-                return;
-            }
+            // Right-click on any cell (empty or occupied) = Open piece selection to place/replace
+            openPieceSelection(cursorX, cursorY);
+            return;
         }
     }
 
