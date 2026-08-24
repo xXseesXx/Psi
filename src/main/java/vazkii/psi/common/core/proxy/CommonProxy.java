@@ -1,20 +1,34 @@
 package vazkii.psi.common.core.proxy;
 
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
+
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
 import vazkii.psi.common.Psi;
 import vazkii.psi.common.core.handler.ConfigHandler;
 import vazkii.psi.common.entity.EntitySpellProjectile;
+import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.lib.LibMisc;
 
 public class CommonProxy {
 
+    public static Item itemCAD;
+
     public void preInit(FMLPreInitializationEvent event) {
         ConfigHandler.synchronizeConfiguration(event.getSuggestedConfigurationFile());
         Psi.logger.info("Psi is starting up at version " + LibMisc.VERSION);
+
+        // Register items
+        itemCAD = new ItemCAD().setUnlocalizedName("psi:cad")
+            .setTextureName("psi:cad")
+            .setCreativeTab(CreativeTabs.tabTools);
+        GameRegistry.registerItem(itemCAD, "cad");
+        Psi.logger.info("Registered ItemCAD");
     }
 
     public void init(FMLInitializationEvent event) {

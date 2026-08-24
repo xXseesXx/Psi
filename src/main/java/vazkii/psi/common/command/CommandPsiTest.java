@@ -76,11 +76,13 @@ public class CommandPsiTest extends CommandBase {
             executeExplodeTest(sender, args);
         } else if (subcommand.equalsIgnoreCase("projectile")) {
             executeProjectileTest(sender, args);
+        } else if (subcommand.equalsIgnoreCase("givecad")) {
+            executeGiveCAD(sender, args);
         } else {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Unknown subcommand: " + subcommand));
             sender.addChatMessage(
                 new ChatComponentText(
-                    EnumChatFormatting.YELLOW + "Available: debug, math, break, explode, projectile"));
+                    EnumChatFormatting.YELLOW + "Available: debug, math, break, explode, projectile, givecad"));
         }
     }
 
@@ -510,10 +512,123 @@ public class CommandPsiTest extends CommandBase {
         }
     }
 
+    private void executeGiveCAD(ICommandSender sender, String[] args) {
+        // Must be a player
+        if (!(sender instanceof EntityPlayer)) {
+            sender
+                .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "This command must be run by a player"));
+            return;
+        }
+
+        EntityPlayer player = (EntityPlayer) sender;
+
+        // Parse spell type (default: break)
+        String spellType = args.length > 1 ? args[1] : "break";
+
+        try {
+            Spell spell;
+
+            if (spellType.equalsIgnoreCase("break")) {
+                // Create break spell
+                spell = new Spell();
+                spell.name = "Break Spell";
+
+                PieceConstantNumber maxDistConst = new PieceConstantNumber(spell);
+                maxDistConst.constant = 32.0;
+                maxDistConst.x = 0;
+                maxDistConst.y = 0;
+                maxDistConst.isInGrid = true;
+
+                PieceSelectorRaycast raycast = new PieceSelectorRaycast(spell);
+                raycast.x = 1;
+                raycast.y = 0;
+                raycast.isInGrid = true;
+                raycast.setParamSide(raycast.maxDist, SpellParam.Side.LEFT);
+
+                PieceTrickBreakBlock breakTrick = new PieceTrickBreakBlock(spell);
+                breakTrick.x = 2;
+                breakTrick.y = 0;
+                breakTrick.isInGrid = true;
+                breakTrick.setParamSide(breakTrick.position, SpellParam.Side.LEFT);
+
+                spell.grid.gridData[0][0] = maxDistConst;
+                spell.grid.gridData[1][0] = raycast;
+                spell.grid.gridData[2][0] = breakTrick;
+
+            } else if (spellType.equalsIgnoreCase("explode")) {
+                // Create explode spell
+                spell = new Spell();
+                spell.name = "Explode Spell";
+
+                PieceConstantNumber powerConst = new PieceConstantNumber(spell);
+                powerConst.constant = 3.0;
+                powerConst.x = 0;
+                powerConst.y = 0;
+                powerConst.isInGrid = true;
+
+                PieceSelectorCaster casterSelector = new PieceSelectorCaster(spell);
+                casterSelector.x = 0;
+                casterSelector.y = 1;
+                casterSelector.isInGrid = true;
+
+                PieceSelectorEntityPosition entityPos = new PieceSelectorEntityPosition(spell);
+                entityPos.x = 1;
+                entityPos.y = 1;
+                entityPos.isInGrid = true;
+                entityPos.setParamSide(entityPos.target, SpellParam.Side.LEFT);
+
+                PieceTrickExplode explodeTrick = new PieceTrickExplode(spell);
+                explodeTrick.x = 1;
+                explodeTrick.y = 0;
+                explodeTrick.isInGrid = true;
+                explodeTrick.setParamSide(explodeTrick.position, SpellParam.Side.BOTTOM);
+                explodeTrick.setParamSide(explodeTrick.power, SpellParam.Side.LEFT);
+
+                spell.grid.gridData[0][0] = powerConst;
+                spell.grid.gridData[0][1] = casterSelector;
+                spell.grid.gridData[1][1] = entityPos;
+                spell.grid.gridData[1][0] = explodeTrick;
+
+            } else {
+                sender
+                    .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Unknown spell type: " + spellType));
+                sender.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + "Available: break, explode"));
+                return;
+            }
+
+            // Create CAD item with spell
+            net.minecraft.item.ItemStack cad = new net.minecraft.item.ItemStack(
+                vazkii.psi.common.core.proxy.CommonProxy.itemCAD);
+            vazkii.psi.common.item.ItemCAD.setSpell(cad, spell);
+
+            // Give to player
+            player.inventory.addItemStackToInventory(cad);
+
+            // Success feedback
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.GREEN + "[Psi] "
+                        + EnumChatFormatting.RESET
+                        + "CAD with "
+                        + spell.name
+                        + " given!"));
+
+        } catch (Exception e) {
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.RED + "[Psi Error] "
+                        + e.getClass()
+                            .getSimpleName()
+                        + ": "
+                        + e.getMessage()));
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "debug", "math", "break", "explode", "projectile");
+            return getListOfStringsMatchingLastWord(args, "debug", "math", "break", "explode", "projectile", "givecad");
         }
         return null;
     }
