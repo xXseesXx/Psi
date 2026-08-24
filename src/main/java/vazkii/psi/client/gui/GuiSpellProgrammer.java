@@ -16,21 +16,23 @@ public class GuiSpellProgrammer extends GuiScreen {
     private final ItemStack cadStack;
     private Spell editingSpell;
 
-    // GUI dimensions
-    private int xSize = 256;
-    private int ySize = 216;
+    // GUI dimensions (from original Psi)
+    private int xSize = 174;
+    private int ySize = 184;
     private int guiLeft;
     private int guiTop;
+    private int padLeft = 7;
+    private int padTop = 7;
+    private int gridLeft;
+    private int gridTop;
 
     // Grid constants (Psi uses 9x9 grid)
     private static final int GRID_SIZE = 9;
     private static final int CELL_SIZE = 18;
-    private int gridOffsetX = 40; // Offset from left of GUI
-    private int gridOffsetY = 40; // Offset from top of GUI
 
     // Hover state
-    private int hoveredGridX = -1;
-    private int hoveredGridY = -1;
+    private int cursorX = -1;
+    private int cursorY = -1;
 
     public GuiSpellProgrammer(ItemStack cadStack) {
         this.cadStack = cadStack;
@@ -47,9 +49,11 @@ public class GuiSpellProgrammer extends GuiScreen {
     public void initGui() {
         super.initGui();
 
-        // Center the GUI on screen
+        // Center the GUI on screen (matching original)
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
+        this.gridLeft = guiLeft + padLeft;
+        this.gridTop = guiTop + padTop;
     }
 
     @Override
@@ -60,111 +64,45 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Set up OpenGL for texture rendering
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-        // Draw GUI background (will use texture in Milestone 3)
-        drawGuiBackground();
+        // Bind and draw GUI background texture
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
+        this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-        // Update hover state based on mouse position
-        updateHoverState(mouseX, mouseY);
+        // Calculate cursor position based on mouse
+        cursorX = (mouseX - gridLeft) / CELL_SIZE;
+        cursorY = (mouseY - gridTop) / CELL_SIZE;
 
-        // Draw the 9x9 grid
-        drawGrid();
+        // Validate cursor is within grid bounds
+        if (cursorX > 8 || cursorY > 8 || cursorX < 0 || cursorY < 0 || mouseX < gridLeft || mouseY < gridTop) {
+            cursorX = -1;
+            cursorY = -1;
+        }
 
-        // Draw title
-        String title = "Spell Programmer";
-        int titleX = guiLeft + (xSize - fontRendererObj.getStringWidth(title)) / 2;
-        int titleY = guiTop + 6;
-        fontRendererObj.drawString(title, titleX, titleY, 0x404040);
+        // Draw hover highlight overlay from texture
+        if (cursorX >= 0 && cursorY >= 0) {
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
+            // Hover overlay texture at (16, ySize) in programmer.png, size 16x16
+            this.drawTexturedModalRect(
+                gridLeft + cursorX * CELL_SIZE,
+                gridTop + cursorY * CELL_SIZE,
+                16,
+                ySize,
+                16,
+                16);
+        }
 
         // Draw spell name if editing existing spell
         if (editingSpell != null && editingSpell.name != null && !editingSpell.name.isEmpty()) {
-            String spellName = "Editing: " + editingSpell.name;
-            int nameX = guiLeft + 8;
-            int nameY = guiTop + 20;
+            String spellName = editingSpell.name;
+            int nameX = guiLeft + xSize - 130;
+            int nameY = guiTop + ySize - 14;
             fontRendererObj.drawString(spellName, nameX, nameY, 0x404040);
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
-    }
-
-    private void drawGuiBackground() {
-        // Bind the programmer.png texture
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        this.mc.getTextureManager()
-            .bindTexture(TEXTURE);
-
-        // Draw the textured GUI background
-        // drawTexturedModalRect(x, y, textureX, textureY, width, height)
-        this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
-    }
-
-    /**
-     * Update which grid cell the mouse is hovering over.
-     */
-    private void updateHoverState(int mouseX, int mouseY) {
-        int gridStartX = guiLeft + gridOffsetX;
-        int gridStartY = guiTop + gridOffsetY;
-        int gridEndX = gridStartX + (GRID_SIZE * CELL_SIZE);
-        int gridEndY = gridStartY + (GRID_SIZE * CELL_SIZE);
-
-        // Check if mouse is within grid bounds
-        if (mouseX >= gridStartX && mouseX < gridEndX && mouseY >= gridStartY && mouseY < gridEndY) {
-            // Calculate which cell is hovered
-            hoveredGridX = (mouseX - gridStartX) / CELL_SIZE;
-            hoveredGridY = (mouseY - gridStartY) / CELL_SIZE;
-        } else {
-            // Not hovering over grid
-            hoveredGridX = -1;
-            hoveredGridY = -1;
-        }
-    }
-
-    /**
-     * Draw the 9x9 spell programming grid.
-     */
-    private void drawGrid() {
-        int gridStartX = guiLeft + gridOffsetX;
-        int gridStartY = guiTop + gridOffsetY;
-
-        // Draw each cell
-        for (int x = 0; x < GRID_SIZE; x++) {
-            for (int y = 0; y < GRID_SIZE; y++) {
-                int cellX = gridStartX + (x * CELL_SIZE);
-                int cellY = gridStartY + (y * CELL_SIZE);
-
-                // Determine cell color
-                int cellColor;
-                if (x == hoveredGridX && y == hoveredGridY) {
-                    // Hovered cell - light blue highlight
-                    cellColor = 0xFFADD8E6;
-                } else {
-                    // Normal cell - white
-                    cellColor = 0xFFFFFFFF;
-                }
-
-                // Draw cell background
-                drawRect(cellX, cellY, cellX + CELL_SIZE, cellY + CELL_SIZE, cellColor);
-
-                // Draw cell border (dark gray)
-                drawRect(cellX, cellY, cellX + CELL_SIZE, cellY + 1, 0xFF808080); // Top
-                drawRect(cellX, cellY + CELL_SIZE - 1, cellX + CELL_SIZE, cellY + CELL_SIZE, 0xFF808080); // Bottom
-                drawRect(cellX, cellY, cellX + 1, cellY + CELL_SIZE, 0xFF808080); // Left
-                drawRect(cellX + CELL_SIZE - 1, cellY, cellX + CELL_SIZE, cellY + CELL_SIZE, 0xFF808080); // Right
-            }
-        }
-
-        // Draw grid label
-        String gridLabel = "Spell Grid (9x9)";
-        int labelX = gridStartX;
-        int labelY = gridStartY - 12;
-        fontRendererObj.drawString(gridLabel, labelX, labelY, 0x404040);
-
-        // Show hovered coordinates for debugging
-        if (hoveredGridX >= 0 && hoveredGridY >= 0) {
-            String coordText = "Cell: (" + hoveredGridX + ", " + hoveredGridY + ")";
-            int coordX = gridStartX + (GRID_SIZE * CELL_SIZE) - fontRendererObj.getStringWidth(coordText);
-            int coordY = gridStartY - 12;
-            fontRendererObj.drawString(coordText, coordX, coordY, 0x606060);
-        }
     }
 
     @Override
