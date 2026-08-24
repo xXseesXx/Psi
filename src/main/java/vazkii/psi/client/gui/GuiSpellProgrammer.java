@@ -98,7 +98,13 @@ public class GuiSpellProgrammer extends GuiScreen {
         cursorY = (mouseY - gridTop) / CELL_SIZE;
 
         // Validate cursor is within grid bounds
-        if (cursorX > 8 || cursorY > 8 || cursorX < 0 || cursorY < 0 || mouseX < gridLeft || mouseY < gridTop) {
+        // Disable cursor when side config panel is open (matches 1.21.1's panelWidget.panelEnabled check)
+        if (isSideConfigPanelOpen() || cursorX > 8
+            || cursorY > 8
+            || cursorX < 0
+            || cursorY < 0
+            || mouseX < gridLeft
+            || mouseY < gridTop) {
             cursorX = -1;
             cursorY = -1;
         }
@@ -604,6 +610,18 @@ public class GuiSpellProgrammer extends GuiScreen {
         tess.addVertexWithUV(screenX + minX, screenY + minY, zLevel, minU, minV);
     }
 
+    /**
+     * Check if the side configuration panel is currently visible.
+     * Matches 1.21.1's panelWidget.panelEnabled check.
+     */
+    private boolean isSideConfigPanelOpen() {
+        if (selectedX < 0 || selectedY < 0 || editingSpell == null || editingSpell.grid == null) {
+            return false;
+        }
+        vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[selectedX][selectedY];
+        return piece != null && !piece.params.isEmpty();
+    }
+
     private void drawSideConfigPanel(int mouseX, int mouseY) {
         // Check if we have a selected piece with parameters
         if (selectedX < 0 || selectedY < 0) {
@@ -763,31 +781,40 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
-        // Only handle grid clicks if cursor is over grid
-        if (cursorX < 0 || cursorY < 0) {
+        // Calculate cursor position for click handling (independent of hover rendering)
+        // This allows clicking pieces even when side config panel is open
+        int clickCursorX = (mouseX - gridLeft) / CELL_SIZE;
+        int clickCursorY = (mouseY - gridTop) / CELL_SIZE;
+
+        // Validate cursor is within grid bounds
+        if (clickCursorX > 8 || clickCursorY > 8
+            || clickCursorX < 0
+            || clickCursorY < 0
+            || mouseX < gridLeft
+            || mouseY < gridTop) {
             return;
         }
 
         // Left-click = Select piece
         if (button == 0) {
-            selectedX = cursorX;
-            selectedY = cursorY;
+            selectedX = clickCursorX;
+            selectedY = clickCursorY;
             return;
         }
 
         // Right-click on grid
         if (button == 1) {
-            vazkii.psi.api.spell.SpellPiece existingPiece = editingSpell.grid.gridData[cursorX][cursorY];
+            vazkii.psi.api.spell.SpellPiece existingPiece = editingSpell.grid.gridData[clickCursorX][clickCursorY];
 
             // Right-click + Shift = Delete piece
             if (isShiftKeyDown() && existingPiece != null) {
-                editingSpell.grid.gridData[cursorX][cursorY] = null;
+                editingSpell.grid.gridData[clickCursorX][clickCursorY] = null;
                 syncSpellToServer(); // Sync deletion to server
                 return;
             }
 
             // Right-click on any cell (empty or occupied) = Open piece selection to place/replace
-            openPieceSelection(cursorX, cursorY);
+            openPieceSelection(clickCursorX, clickCursorY);
             return;
         }
     }
