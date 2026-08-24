@@ -1,0 +1,2 @@
+# Compampac - Compatibility/Compatibility Layer
+This directory contains compatibility wrappers that bridge modern Minecraft/NeoForge APIs to 1.7.10 Forge.
