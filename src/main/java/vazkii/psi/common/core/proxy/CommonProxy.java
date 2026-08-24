@@ -41,7 +41,7 @@ public class CommonProxy {
             EntitySpellProjectile.class,
             "spell_projectile",
             1, // entity ID
-            Psi.class, // Need to use class reference for 1.7.10
+            Psi.instance, // Mod instance
             64, // tracking range
             1, // update frequency
             true // send velocity updates

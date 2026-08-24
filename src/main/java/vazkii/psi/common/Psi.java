@@ -26,6 +26,9 @@ public class Psi {
     public static final String MOD_NAME = "Psi";
     public static final Logger logger = LogManager.getLogger(MOD_ID);
 
+    @Mod.Instance(MOD_ID)
+    public static Psi instance;
+
     @SidedProxy(
         clientSide = "vazkii.psi.client.core.proxy.ClientProxy",
         serverSide = "vazkii.psi.common.core.proxy.CommonProxy")
