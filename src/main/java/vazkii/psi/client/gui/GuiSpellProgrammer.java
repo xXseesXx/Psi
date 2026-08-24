@@ -208,41 +208,13 @@ public class GuiSpellProgrammer extends GuiScreen {
      * Draw a single spell piece at the given grid coordinates.
      */
     private void drawPiece(vazkii.psi.api.spell.SpellPiece piece, int gridX, int gridY) {
-        // Get the piece's texture based on its registry key
-        // The registry key format is "psi:piece_name"
-        String pieceName = piece.registryKey.getResourcePath();
-
-        // In 1.7.10, texture paths don't include "textures/" prefix in ResourceLocation
-        // The path should be: "psi:spell/piece_name.png"
-        // which resolves to: assets/psi/textures/spell/piece_name.png
-        ResourceLocation pieceTexture = new ResourceLocation(
-            piece.registryKey.getResourceDomain(),
-            "textures/spell/" + pieceName + ".png");
-
         // Calculate screen position
         int screenX = gridLeft + gridX * CELL_SIZE;
         int screenY = gridTop + gridY * CELL_SIZE;
 
-        try {
-            // Bind the piece texture
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            this.mc.getTextureManager()
-                .bindTexture(pieceTexture);
-
-            // Draw the 16x16 piece icon (centered in 18x18 cell, so offset by 1px)
-            this.drawTexturedModalRect(screenX + 1, screenY + 1, 0, 0, 16, 16);
-
-        } catch (Exception e) {
-            // If texture not found, draw a gray placeholder square with piece name initial
-            drawRect(screenX + 1, screenY + 1, screenX + 17, screenY + 17, 0xFF808080);
-
-            // Draw first letter of piece name for debugging
-            if (pieceName.length() > 0) {
-                String initial = String.valueOf(pieceName.charAt(0))
-                    .toUpperCase();
-                fontRendererObj.drawString(initial, screenX + 6, screenY + 5, 0xFFFFFF);
-            }
-        }
+        // Use texture atlas to draw piece (centered in 18x18 cell, so offset by 1px)
+        PieceTextureAtlas.getInstance()
+            .drawPiece(piece.registryKey.toString(), screenX + 1, screenY + 1);
     }
 
     @Override
@@ -365,18 +337,9 @@ public class GuiSpellProgrammer extends GuiScreen {
                 drawRect(btnX, btnY, btnX + buttonSize, btnY + buttonSize, 0x885555FF);
             }
 
-            // Draw piece icon (16x16 centered in 18x18 button)
-            String pieceName = pieceId.split(":")[1];
-            ResourceLocation pieceTexture = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
-
-            try {
-                this.mc.getTextureManager()
-                    .bindTexture(pieceTexture);
-                this.drawTexturedModalRect(btnX + 1, btnY + 1, 0, 0, 16, 16);
-            } catch (Exception e) {
-                // Fallback: gray square
-                drawRect(btnX + 1, btnY + 1, btnX + 17, btnY + 17, 0xFF808080);
-            }
+            // Draw piece icon using texture atlas (16x16 centered in 18x18 button)
+            PieceTextureAtlas.getInstance()
+                .drawPiece(pieceId, btnX + 1, btnY + 1);
 
             // Store tooltip for rendering last
             if (hovered) {
