@@ -45,4 +45,14 @@ public class PieceConstantNumber extends SpellPiece {
     public Object execute(SpellContext context) throws SpellRuntimeException {
         return constant;
     }
+
+    @Override
+    protected void writePieceToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        nbt.setDouble("constant", constant);
+    }
+
+    @Override
+    protected void readPieceFromNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        constant = nbt.getDouble("constant");
+    }
 }

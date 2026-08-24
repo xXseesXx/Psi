@@ -195,6 +195,87 @@ public abstract class SpellPiece {
         statLabels.put(stat, label);
     }
 
+    // NBT Serialization ============================================================
+
+    /**
+     * Write this piece to NBT, including its ID, parameter sides, and custom data.
+     */
+    public void writeToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        // Save piece type ID
+        String id = vazkii.psi.common.spell.SpellPieceRegistry.getID(this);
+        if (id != null) {
+            nbt.setString("id", id);
+        }
+
+        // Save parameter sides
+        net.minecraft.nbt.NBTTagCompound sidesNbt = new net.minecraft.nbt.NBTTagCompound();
+        for (Map.Entry<SpellParam<?>, SpellParam.Side> entry : paramSides.entrySet()) {
+            sidesNbt.setString(
+                entry.getKey().name,
+                entry.getValue()
+                    .name());
+        }
+        nbt.setTag("paramSides", sidesNbt);
+
+        // Save piece-specific data (override in subclasses)
+        writePieceToNBT(nbt);
+    }
+
+    /**
+     * Override in subclasses to save custom data (e.g., constant values).
+     * Default implementation does nothing.
+     */
+    protected void writePieceToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        // NO-OP - override in subclasses
+    }
+
+    /**
+     * Create a piece from NBT data.
+     * Returns null if piece ID is not registered.
+     */
+    public static SpellPiece createFromNBT(Spell spell, net.minecraft.nbt.NBTTagCompound nbt) {
+        String id = nbt.getString("id");
+        if (id == null || id.isEmpty()) {
+            System.err.println("[Psi] Piece NBT missing ID");
+            return null;
+        }
+
+        // Create piece based on ID
+        SpellPiece piece = vazkii.psi.common.spell.SpellPieceRegistry.create(id, spell);
+        if (piece == null) {
+            return null;
+        }
+
+        // Load parameter sides
+        net.minecraft.nbt.NBTTagCompound sidesNbt = nbt.getCompoundTag("paramSides");
+        for (SpellParam<?> param : piece.params.values()) {
+            if (sidesNbt.hasKey(param.name)) {
+                String sideName = sidesNbt.getString(param.name);
+                try {
+                    SpellParam.Side side = SpellParam.Side.valueOf(sideName);
+                    piece.setParamSide(param, side);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("[Psi] Invalid param side: " + sideName);
+                }
+            }
+        }
+
+        // Load piece-specific data
+        piece.readPieceFromNBT(nbt);
+
+        return piece;
+    }
+
+    /**
+     * Override in subclasses to load custom data (e.g., constant values).
+     * Default implementation does nothing.
+     */
+    protected void readPieceFromNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        // NO-OP - override in subclasses
+    }
+
+    // End NBT Serialization ========================================================
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + " @ (" + x + ", " + y + ")";

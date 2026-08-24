@@ -23,6 +23,10 @@ public class CommonProxy {
         ConfigHandler.synchronizeConfiguration(event.getSuggestedConfigurationFile());
         Psi.logger.info("Psi is starting up at version " + LibMisc.VERSION);
 
+        // Initialize spell piece registry
+        vazkii.psi.common.spell.SpellPieceRegistry.init();
+        Psi.logger.info("Initialized SpellPieceRegistry with 9 pieces");
+
         // Register items
         itemCAD = new ItemCAD().setUnlocalizedName("psi:cad")
             .setTextureName("psi:cad")

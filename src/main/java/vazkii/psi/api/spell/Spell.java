@@ -38,21 +38,54 @@ public class Spell {
 
     /**
      * Write spell to NBT.
-     * STUB: Full implementation in Phase 8 Part C.
      */
     public void writeToNBT(NBTTagCompound nbt) {
         nbt.setString("name", name);
-        // TODO Phase 8 Part C: Serialize grid and metadata
+
+        // Write grid pieces as a list
+        net.minecraft.nbt.NBTTagList gridList = new net.minecraft.nbt.NBTTagList();
+        for (int x = 0; x < SpellGrid.GRID_SIZE; x++) {
+            for (int y = 0; y < SpellGrid.GRID_SIZE; y++) {
+                SpellPiece piece = grid.gridData[x][y];
+                if (piece != null) {
+                    NBTTagCompound pieceNbt = new NBTTagCompound();
+                    pieceNbt.setInteger("x", x);
+                    pieceNbt.setInteger("y", y);
+                    piece.writeToNBT(pieceNbt);
+                    gridList.appendTag(pieceNbt);
+                }
+            }
+        }
+        nbt.setTag("grid", gridList);
+
+        // TODO: Serialize metadata if needed
     }
 
     /**
      * Read spell from NBT.
-     * STUB: Full implementation in Phase 8 Part C.
      */
     public static Spell readFromNBT(NBTTagCompound nbt) {
         Spell spell = new Spell();
         spell.name = nbt.getString("name");
-        // TODO Phase 8 Part C: Deserialize grid and metadata
+
+        // Read grid pieces
+        net.minecraft.nbt.NBTTagList gridList = nbt.getTagList("grid", 10); // 10 = compound tag
+        for (int i = 0; i < gridList.tagCount(); i++) {
+            NBTTagCompound pieceNbt = gridList.getCompoundTagAt(i);
+            int x = pieceNbt.getInteger("x");
+            int y = pieceNbt.getInteger("y");
+
+            SpellPiece piece = SpellPiece.createFromNBT(spell, pieceNbt);
+            if (piece != null) {
+                piece.x = x;
+                piece.y = y;
+                piece.isInGrid = true;
+                spell.grid.gridData[x][y] = piece;
+            }
+        }
+
+        // TODO: Deserialize metadata if needed
+
         return spell;
     }
 
