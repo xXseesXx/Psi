@@ -87,15 +87,14 @@ public class GuiSpellProgrammer extends GuiScreen {
     }
 
     private void drawGuiBackground() {
-        // For Milestone 1, just draw a simple rectangle
-        // In Milestone 3, we'll bind the programmer.png texture
-        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFFC6C6C6);
+        // Bind the programmer.png texture
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
 
-        // Draw border
-        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + 1, 0xFF000000); // Top
-        drawRect(guiLeft, guiTop + ySize - 1, guiLeft + xSize, guiTop + ySize, 0xFF000000); // Bottom
-        drawRect(guiLeft, guiTop, guiLeft + 1, guiTop + ySize, 0xFF000000); // Left
-        drawRect(guiLeft + xSize - 1, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF000000); // Right
+        // Draw the textured GUI background
+        // drawTexturedModalRect(x, y, textureX, textureY, width, height)
+        this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
     }
 
     /**
