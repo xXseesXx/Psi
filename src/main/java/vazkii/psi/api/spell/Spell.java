@@ -7,6 +7,8 @@
  */
 package vazkii.psi.api.spell;
 
+import net.minecraft.nbt.NBTTagCompound;
+
 /**
  * STUB for Phase 2: Minimal spell container.
  * Full implementation will be added in Phase 7 (spell piece linking).
@@ -32,6 +34,26 @@ public class Spell {
 
     public Spell() {
         this.grid = new SpellGrid(this);
+    }
+
+    /**
+     * Write spell to NBT.
+     * STUB: Full implementation in Phase 8 Part C.
+     */
+    public void writeToNBT(NBTTagCompound nbt) {
+        nbt.setString("name", name);
+        // TODO Phase 8 Part C: Serialize grid and metadata
+    }
+
+    /**
+     * Read spell from NBT.
+     * STUB: Full implementation in Phase 8 Part C.
+     */
+    public static Spell readFromNBT(NBTTagCompound nbt) {
+        Spell spell = new Spell();
+        spell.name = nbt.getString("name");
+        // TODO Phase 8 Part C: Deserialize grid and metadata
+        return spell;
     }
 
 }

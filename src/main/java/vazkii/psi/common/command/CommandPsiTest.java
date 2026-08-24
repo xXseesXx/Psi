@@ -74,10 +74,13 @@ public class CommandPsiTest extends CommandBase {
             executeBreakTest(sender, args);
         } else if (subcommand.equalsIgnoreCase("explode")) {
             executeExplodeTest(sender, args);
+        } else if (subcommand.equalsIgnoreCase("projectile")) {
+            executeProjectileTest(sender, args);
         } else {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Unknown subcommand: " + subcommand));
             sender.addChatMessage(
-                new ChatComponentText(EnumChatFormatting.YELLOW + "Available: debug, math, break, explode"));
+                new ChatComponentText(
+                    EnumChatFormatting.YELLOW + "Available: debug, math, break, explode, projectile"));
         }
     }
 
@@ -430,10 +433,87 @@ public class CommandPsiTest extends CommandBase {
         }
     }
 
+    private void executeProjectileTest(ICommandSender sender, String[] args) {
+        // Must be a player
+        if (!(sender instanceof EntityPlayer)) {
+            sender
+                .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "This command must be run by a player"));
+            return;
+        }
+
+        EntityPlayer player = (EntityPlayer) sender;
+
+        try {
+            // Create a simple break spell
+            Spell spell = new Spell();
+            spell.name = "Projectile Break Test";
+
+            // Create constant for max distance
+            PieceConstantNumber maxDistConst = new PieceConstantNumber(spell);
+            maxDistConst.constant = 32.0;
+            maxDistConst.x = 0;
+            maxDistConst.y = 0;
+            maxDistConst.isInGrid = true;
+
+            // Create raycast selector
+            PieceSelectorRaycast raycast = new PieceSelectorRaycast(spell);
+            raycast.x = 1;
+            raycast.y = 0;
+            raycast.isInGrid = true;
+            raycast.setParamSide(raycast.maxDist, SpellParam.Side.LEFT);
+
+            // Create break trick
+            PieceTrickBreakBlock breakTrick = new PieceTrickBreakBlock(spell);
+            breakTrick.x = 2;
+            breakTrick.y = 0;
+            breakTrick.isInGrid = true;
+            breakTrick.setParamSide(breakTrick.position, SpellParam.Side.LEFT);
+
+            // Place pieces in grid
+            spell.grid.gridData[0][0] = maxDistConst;
+            spell.grid.gridData[1][0] = raycast;
+            spell.grid.gridData[2][0] = breakTrick;
+
+            // Create and shoot projectile
+            vazkii.psi.common.entity.EntitySpellProjectile projectile = new vazkii.psi.common.entity.EntitySpellProjectile(
+                player.worldObj,
+                player,
+                spell);
+
+            // Set velocity based on player's look direction
+            double velocity = 1.5; // Speed multiplier
+            double mx = -Math.sin(Math.toRadians(player.rotationYaw)) * Math.cos(Math.toRadians(player.rotationPitch))
+                * velocity;
+            double my = -Math.sin(Math.toRadians(player.rotationPitch)) * velocity;
+            double mz = Math.cos(Math.toRadians(player.rotationYaw)) * Math.cos(Math.toRadians(player.rotationPitch))
+                * velocity;
+
+            projectile.setThrowableHeading(mx, my, mz, 1.5F, 0.0F);
+
+            // Spawn the projectile
+            player.worldObj.spawnEntityInWorld(projectile);
+
+            // Success feedback
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.GREEN + "[Psi] " + EnumChatFormatting.RESET + "Spell projectile shot!"));
+
+        } catch (Exception e) {
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.RED + "[Psi Error] "
+                        + e.getClass()
+                            .getSimpleName()
+                        + ": "
+                        + e.getMessage()));
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "debug", "math", "break", "explode");
+            return getListOfStringsMatchingLastWord(args, "debug", "math", "break", "explode", "projectile");
         }
         return null;
     }
