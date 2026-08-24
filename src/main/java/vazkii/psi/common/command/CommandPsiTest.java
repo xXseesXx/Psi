@@ -15,13 +15,17 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellContext;
 import vazkii.psi.api.spell.SpellRuntimeException;
 import vazkii.psi.common.spell.operator.PieceOperatorSum;
+import vazkii.psi.common.spell.selector.PieceSelectorCaster;
+import vazkii.psi.common.spell.selector.PieceSelectorEntityPosition;
 import vazkii.psi.common.spell.selector.PieceSelectorRaycast;
 import vazkii.psi.common.spell.trick.PieceTrickBreakBlock;
 import vazkii.psi.common.spell.trick.PieceTrickDebug;
+import vazkii.psi.common.spell.trick.PieceTrickExplode;
 
 /**
  * Test command for executing barebones spells.
@@ -39,7 +43,7 @@ public class CommandPsiTest extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/psitest <debug|math|break> <args>";
+        return "/psitest <debug|math|break|explode> <args>";
     }
 
     @Override
@@ -51,7 +55,7 @@ public class CommandPsiTest extends CommandBase {
     public void processCommand(ICommandSender sender, String[] args) {
         if (args.length < 1) {
             sender.addChatMessage(
-                new ChatComponentText(EnumChatFormatting.RED + "Usage: /psitest <debug|math|break> <args>"));
+                new ChatComponentText(EnumChatFormatting.RED + "Usage: /psitest <debug|math|break|explode> <args>"));
             return;
         }
 
@@ -63,9 +67,12 @@ public class CommandPsiTest extends CommandBase {
             executeMathTest(sender, args);
         } else if (subcommand.equalsIgnoreCase("break")) {
             executeBreakTest(sender, args);
+        } else if (subcommand.equalsIgnoreCase("explode")) {
+            executeExplodeTest(sender, args);
         } else {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Unknown subcommand: " + subcommand));
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + "Available: debug, math, break"));
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.YELLOW + "Available: debug, math, break, explode"));
         }
     }
 
@@ -323,10 +330,96 @@ public class CommandPsiTest extends CommandBase {
         }
     }
 
+    private void executeExplodeTest(ICommandSender sender, String[] args) {
+        // Must be a player
+        if (!(sender instanceof EntityPlayer)) {
+            sender
+                .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "This command must be run by a player"));
+            return;
+        }
+
+        EntityPlayer player = (EntityPlayer) sender;
+
+        // Create spell and context
+        Spell spell = new Spell();
+        SpellContext context = new SpellContext().setPlayer(player);
+
+        try {
+            // Get player's position using entity position selector
+            // Chain: PieceSelectorCaster -> Entity -> PieceSelectorEntityPosition -> Vector3
+
+            // First get the caster entity
+            PieceSelectorCaster casterSelector = new PieceSelectorCaster(spell) {
+
+                @Override
+                public Object execute(SpellContext ctx) {
+                    return ctx.caster;
+                }
+            };
+            final Object casterEntity = casterSelector.execute(context);
+
+            // Convert entity to position Vector3
+            PieceSelectorEntityPosition posSelector = new PieceSelectorEntityPosition(spell) {
+
+                @Override
+                public <T> T getParamValue(SpellContext ctx, vazkii.psi.api.spell.SpellParam<T> param) {
+                    if (param == this.target) {
+                        return (T) casterEntity;
+                    }
+                    return null;
+                }
+            };
+            posSelector.initParams();
+            final Object position = posSelector.execute(context);
+
+            // Create explosion at player position
+            final double explosionPower = 3.0; // TNT is 4.0, this is slightly weaker
+
+            PieceTrickExplode explodeTrick = new PieceTrickExplode(spell) {
+
+                @Override
+                public <T> T getParamValue(SpellContext ctx, vazkii.psi.api.spell.SpellParam<T> param) {
+                    if (param == this.position) {
+                        return (T) position;
+                    }
+                    if (param == this.power) {
+                        return (T) (Double) explosionPower;
+                    }
+                    return null;
+                }
+            };
+            explodeTrick.initParams();
+
+            explodeTrick.execute(context);
+
+            // Success message
+            Vector3 pos = (Vector3) position;
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.GREEN + "[Psi] Explode spell executed successfully"));
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.GRAY + "Explosion position: "
+                        + String.format("Vector3{x=%.1f, y=%.1f, z=%.1f}", pos.x, pos.y, pos.z)));
+            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "Power: " + explosionPower));
+
+        } catch (SpellRuntimeException e) {
+            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
+        } catch (Exception e) {
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.RED + "[Psi Error] "
+                        + e.getClass()
+                            .getSimpleName()
+                        + ": "
+                        + e.getMessage()));
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "debug", "math", "break");
+            return getListOfStringsMatchingLastWord(args, "debug", "math", "break", "explode");
         }
         return null;
     }
