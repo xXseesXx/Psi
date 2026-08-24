@@ -34,10 +34,17 @@ public class GuiSpellProgrammer extends GuiScreen {
     private int cursorX = -1;
     private int cursorY = -1;
 
+    // Selection state (for parameter connections)
+    private int selectedX = -1;
+    private int selectedY = -1;
+
     // Piece selection state
     private boolean pieceSelectionOpen = false;
     private int selectionTargetX = -1;
     private int selectionTargetY = -1;
+
+    // Search field for piece list
+    private net.minecraft.client.gui.GuiTextField searchField;
 
     // All available piece types for selection (our 9 basic pieces)
     private static final String[] AVAILABLE_PIECES = { "psi:constant_number", "psi:constant_string", "psi:operator_sum",
@@ -64,6 +71,12 @@ public class GuiSpellProgrammer extends GuiScreen {
         this.guiTop = (this.height - this.ySize) / 2;
         this.gridLeft = guiLeft + padLeft;
         this.gridTop = guiTop + padTop;
+
+        // Initialize search field (initially hidden)
+        searchField = new net.minecraft.client.gui.GuiTextField(fontRendererObj, 0, 0, 100, 10);
+        searchField.setMaxStringLength(50);
+        searchField.setVisible(false);
+        searchField.setEnableBackgroundDrawing(false);
     }
 
     @Override
@@ -89,8 +102,23 @@ public class GuiSpellProgrammer extends GuiScreen {
             cursorY = -1;
         }
 
-        // Draw hover highlight overlay from texture
-        if (cursorX >= 0 && cursorY >= 0) {
+        // Draw selection highlight (blue box) if a cell is selected
+        if (selectedX >= 0 && selectedY >= 0) {
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
+            // Selection texture at (32, ySize) in programmer.png, size 16x16
+            this.drawTexturedModalRect(
+                gridLeft + selectedX * CELL_SIZE,
+                gridTop + selectedY * CELL_SIZE,
+                32,
+                ySize,
+                16,
+                16);
+        }
+
+        // Draw hover highlight overlay from texture (only when piece list is NOT open)
+        if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.mc.getTextureManager()
                 .bindTexture(TEXTURE);
@@ -225,11 +253,19 @@ public class GuiSpellProgrammer extends GuiScreen {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
+        // If piece selection is open, let search field handle typing
+        if (pieceSelectionOpen && searchField.isFocused()) {
+            searchField.textboxKeyTyped(typedChar, keyCode);
+            return;
+        }
+
         // ESC key (keyCode 1) closes the GUI or piece selection
         if (keyCode == 1) {
             if (pieceSelectionOpen) {
                 closePieceSelection();
             } else {
+                // Save spell before closing
+                saveSpellToCAD();
                 this.mc.displayGuiScreen(null);
                 this.mc.setIngameFocus();
             }
@@ -243,6 +279,10 @@ public class GuiSpellProgrammer extends GuiScreen {
         pieceSelectionOpen = true;
         selectionTargetX = gridX;
         selectionTargetY = gridY;
+
+        // Clear and focus search field
+        searchField.setText("");
+        searchField.setFocused(true);
     }
 
     /**
@@ -252,6 +292,8 @@ public class GuiSpellProgrammer extends GuiScreen {
         pieceSelectionOpen = false;
         selectionTargetX = -1;
         selectionTargetY = -1;
+        searchField.setVisible(false);
+        searchField.setFocused(false);
     }
 
     /**
@@ -261,57 +303,107 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Semi-transparent dark background over entire screen
         drawRect(0, 0, this.width, this.height, 0x88000000);
 
-        // Calculate panel dimensions (3x3 grid of 20x20 buttons with spacing)
-        int panelWidth = 3 * 20 + 4 * 4; // 3 buttons, 4 gaps
-        int panelHeight = 3 * 20 + 4 * 4;
+        // Panel dimensions - make it taller for list view
+        int panelWidth = 100;
+        int panelHeight = 125;
         int panelX = (this.width - panelWidth) / 2;
         int panelY = (this.height - panelHeight) / 2;
 
-        // Draw panel background
-        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xFF404040);
-        drawRect(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + panelHeight - 1, 0xFF202020);
+        // Draw panel background (matching 1.21.1 style)
+        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xCC000000);
 
-        // Draw title
-        String title = "Select Piece";
-        int titleX = panelX + (panelWidth - fontRendererObj.getStringWidth(title)) / 2;
-        fontRendererObj.drawString(title, titleX, panelY - 12, 0xFFFFFF);
+        // Draw search field at top
+        searchField.xPosition = panelX + 10;
+        searchField.yPosition = panelY + 5;
+        searchField.width = panelWidth - 20;
+        searchField.setVisible(true);
+        searchField.drawTextBox();
 
-        // Draw 9 pieces in 3x3 grid
+        // Draw search icon (magnifying glass from texture atlas)
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        for (int i = 0; i < AVAILABLE_PIECES.length && i < 9; i++) {
-            int col = i % 3;
-            int row = i / 3;
-            int btnX = panelX + 4 + col * 24;
-            int btnY = panelY + 4 + row * 24;
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
+        this.drawTexturedModalRect(searchField.xPosition - 14, searchField.yPosition - 2, 0, ySize + 16, 12, 12);
 
-            // Highlight on hover
-            boolean hovered = mouseX >= btnX && mouseX < btnX + 20 && mouseY >= btnY && mouseY < btnY + 20;
+        // Filter pieces based on search
+        String searchText = searchField.getText()
+            .toLowerCase();
+        java.util.List<String> filteredPieces = new java.util.ArrayList<>();
+        for (String piece : AVAILABLE_PIECES) {
+            if (searchText.isEmpty() || piece.toLowerCase()
+                .contains(searchText)
+                || formatPieceName(piece).toLowerCase()
+                    .contains(searchText)) {
+                filteredPieces.add(piece);
+            }
+        }
 
-            // Button background
-            int bgColor = hovered ? 0xFF5555FF : 0xFF333333;
-            drawRect(btnX, btnY, btnX + 20, btnY + 20, bgColor);
-            drawRect(btnX + 1, btnY + 1, btnX + 19, btnY + 19, 0xFF000000);
+        // Draw pieces in vertical list
+        int listStartY = panelY + 20;
+        int itemHeight = 18;
+        int maxVisibleItems = 5;
 
-            // Draw piece icon (16x16 centered in 20x20 button)
-            String pieceName = AVAILABLE_PIECES[i].split(":")[1];
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+
+        String hoveredPieceTooltip = null;
+
+        for (int i = 0; i < Math.min(filteredPieces.size(), maxVisibleItems); i++) {
+            String pieceId = filteredPieces.get(i);
+            int itemY = listStartY + i * itemHeight;
+
+            // Check if mouse is over this item
+            boolean hovered = mouseX >= panelX + 5 && mouseX < panelX + panelWidth - 5
+                && mouseY >= itemY
+                && mouseY < itemY + itemHeight;
+
+            // Item background
+            if (hovered) {
+                drawRect(panelX + 5, itemY, panelX + panelWidth - 5, itemY + itemHeight, 0xFF5555FF);
+            }
+
+            // Draw piece icon
+            String pieceName = pieceId.split(":")[1];
             ResourceLocation pieceTexture = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
 
             try {
                 this.mc.getTextureManager()
                     .bindTexture(pieceTexture);
-                this.drawTexturedModalRect(btnX + 2, btnY + 2, 0, 0, 16, 16);
+                this.drawTexturedModalRect(panelX + 8, itemY + 1, 0, 0, 16, 16);
             } catch (Exception e) {
                 // Fallback: gray square
-                drawRect(btnX + 2, btnY + 2, btnX + 18, btnY + 18, 0xFF808080);
+                drawRect(panelX + 8, itemY + 1, panelX + 24, itemY + 17, 0xFF808080);
             }
 
-            // Draw tooltip on hover
-            if (hovered) {
-                String tooltip = formatPieceName(AVAILABLE_PIECES[i]);
-                java.util.List<String> tooltipList = new java.util.ArrayList<>();
-                tooltipList.add(tooltip);
-                this.drawHoveringText(tooltipList, mouseX, mouseY, fontRendererObj);
+            // Draw piece name
+            String displayName = formatPieceName(pieceId);
+            // Truncate if too long
+            if (fontRendererObj.getStringWidth(displayName) > panelWidth - 35) {
+                while (fontRendererObj.getStringWidth(displayName + "...") > panelWidth - 35
+                    && displayName.length() > 0) {
+                    displayName = displayName.substring(0, displayName.length() - 1);
+                }
+                displayName += "...";
             }
+            fontRendererObj.drawString(displayName, panelX + 28, itemY + 5, 0xFFFFFF);
+
+            // Store tooltip for rendering last
+            if (hovered) {
+                hoveredPieceTooltip = formatPieceName(pieceId);
+            }
+        }
+
+        // Draw "No results" message if search filtered everything
+        if (filteredPieces.isEmpty()) {
+            String noResults = "No pieces found";
+            int textX = panelX + (panelWidth - fontRendererObj.getStringWidth(noResults)) / 2;
+            fontRendererObj.drawString(noResults, textX, listStartY + 20, 0x888888);
+        }
+
+        // Draw tooltip LAST so it renders on top of everything
+        if (hoveredPieceTooltip != null) {
+            java.util.List<String> tooltipList = new java.util.ArrayList<>();
+            tooltipList.add(hoveredPieceTooltip);
+            this.drawHoveringText(tooltipList, mouseX, mouseY, fontRendererObj);
         }
     }
 
@@ -319,15 +411,18 @@ public class GuiSpellProgrammer extends GuiScreen {
      * Handle mouse clicks in the piece selection overlay.
      */
     private void handlePieceSelectionClick(int mouseX, int mouseY, int button) {
-        // Only handle left-clicks
+        // Let search field handle clicks
+        searchField.mouseClicked(mouseX, mouseY, button);
+
+        // Only handle left-clicks for piece selection
         if (button != 0) {
             closePieceSelection();
             return;
         }
 
         // Calculate panel position
-        int panelWidth = 3 * 20 + 4 * 4;
-        int panelHeight = 3 * 20 + 4 * 4;
+        int panelWidth = 100;
+        int panelHeight = 125;
         int panelX = (this.width - panelWidth) / 2;
         int panelY = (this.height - panelHeight) / 2;
 
@@ -341,16 +436,32 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
-        // Check which piece button was clicked
-        for (int i = 0; i < AVAILABLE_PIECES.length && i < 9; i++) {
-            int col = i % 3;
-            int row = i / 3;
-            int btnX = panelX + 4 + col * 24;
-            int btnY = panelY + 4 + row * 24;
+        // Filter pieces based on search
+        String searchText = searchField.getText()
+            .toLowerCase();
+        java.util.List<String> filteredPieces = new java.util.ArrayList<>();
+        for (String piece : AVAILABLE_PIECES) {
+            if (searchText.isEmpty() || piece.toLowerCase()
+                .contains(searchText)
+                || formatPieceName(piece).toLowerCase()
+                    .contains(searchText)) {
+                filteredPieces.add(piece);
+            }
+        }
 
-            if (mouseX >= btnX && mouseX < btnX + 20 && mouseY >= btnY && mouseY < btnY + 20) {
+        // Check which piece was clicked in the list
+        int listStartY = panelY + 20;
+        int itemHeight = 18;
+        int maxVisibleItems = 5;
+
+        for (int i = 0; i < Math.min(filteredPieces.size(), maxVisibleItems); i++) {
+            int itemY = listStartY + i * itemHeight;
+
+            if (mouseX >= panelX + 5 && mouseX < panelX + panelWidth - 5
+                && mouseY >= itemY
+                && mouseY < itemY + itemHeight) {
                 // User clicked this piece - place it on the grid
-                placePieceOnGrid(AVAILABLE_PIECES[i], selectionTargetX, selectionTargetY);
+                placePieceOnGrid(filteredPieces.get(i), selectionTargetX, selectionTargetY);
                 closePieceSelection();
                 return;
             }
@@ -423,6 +534,13 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
+        // Left-click = Select piece for parameter connections
+        if (button == 0) {
+            selectedX = cursorX;
+            selectedY = cursorY;
+            return;
+        }
+
         // Right-click on grid
         if (button == 1) {
             vazkii.psi.api.spell.SpellPiece existingPiece = editingSpell.grid.gridData[cursorX][cursorY];
@@ -438,6 +556,15 @@ public class GuiSpellProgrammer extends GuiScreen {
                 openPieceSelection(cursorX, cursorY);
                 return;
             }
+        }
+    }
+
+    /**
+     * Save the current spell to the CAD item.
+     */
+    private void saveSpellToCAD() {
+        if (editingSpell != null && cadStack != null) {
+            ItemCAD.setSpell(cadStack, editingSpell);
         }
     }
 }
