@@ -122,6 +122,7 @@ public class PieceTextureAtlas {
     public void drawPiece(String pieceId, int x, int y) {
         UVCoords uv = uvMap.get(pieceId);
         if (uv == null) {
+            System.err.println("[Psi] No UV coords for piece: " + pieceId + " (available: " + uvMap.keySet() + ")");
             // Fallback: draw gray square
             GL11.glDisable(GL11.GL_TEXTURE_2D);
             GL11.glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
@@ -140,14 +141,18 @@ public class PieceTextureAtlas {
         bindAtlas();
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         GL11.glBegin(GL11.GL_QUADS);
-        GL11.glTexCoord2f(uv.u0, uv.v1);
-        GL11.glVertex2f(x, y + uv.height);
-        GL11.glTexCoord2f(uv.u1, uv.v1);
-        GL11.glVertex2f(x + uv.width, y + uv.height);
-        GL11.glTexCoord2f(uv.u1, uv.v0);
-        GL11.glVertex2f(x + uv.width, y);
+        // Top-left
         GL11.glTexCoord2f(uv.u0, uv.v0);
         GL11.glVertex2f(x, y);
+        // Bottom-left
+        GL11.glTexCoord2f(uv.u0, uv.v1);
+        GL11.glVertex2f(x, y + uv.height);
+        // Bottom-right
+        GL11.glTexCoord2f(uv.u1, uv.v1);
+        GL11.glVertex2f(x + uv.width, y + uv.height);
+        // Top-right
+        GL11.glTexCoord2f(uv.u1, uv.v0);
+        GL11.glVertex2f(x + uv.width, y);
         GL11.glEnd();
     }
 

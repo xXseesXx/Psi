@@ -439,8 +439,13 @@ public class GuiSpellProgrammer extends GuiScreen {
                 newPiece.x = gridX;
                 newPiece.y = gridY;
 
+                // Debug: Check registryKey
+                System.out.println("[Psi] Placed piece: " + pieceId + " -> registryKey: " + newPiece.registryKey);
+
                 // Place on grid
                 editingSpell.grid.gridData[gridX][gridY] = newPiece;
+            } else {
+                System.err.println("[Psi] Failed to create piece: " + pieceId + " (create returned null)");
             }
         } catch (Exception e) {
             System.err.println("Failed to create spell piece: " + pieceId);
