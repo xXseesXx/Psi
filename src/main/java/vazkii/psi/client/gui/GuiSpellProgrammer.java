@@ -94,6 +94,9 @@ public class GuiSpellProgrammer extends GuiScreen {
                 16);
         }
 
+        // Draw spell pieces on grid (Milestone 4)
+        drawSpellPieces();
+
         // Draw spell name if editing existing spell
         if (editingSpell != null && editingSpell.name != null && !editingSpell.name.isEmpty()) {
             String spellName = editingSpell.name;
@@ -103,6 +106,59 @@ public class GuiSpellProgrammer extends GuiScreen {
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    /**
+     * Draw all spell pieces currently on the grid.
+     */
+    private void drawSpellPieces() {
+        if (editingSpell == null || editingSpell.grid == null) {
+            return;
+        }
+
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+
+        for (int x = 0; x < GRID_SIZE; x++) {
+            for (int y = 0; y < GRID_SIZE; y++) {
+                vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[x][y];
+                if (piece != null) {
+                    drawPiece(piece, x, y);
+                }
+            }
+        }
+    }
+
+    /**
+     * Draw a single spell piece at the given grid coordinates.
+     */
+    private void drawPiece(vazkii.psi.api.spell.SpellPiece piece, int gridX, int gridY) {
+        // Get the piece's texture based on its registry key
+        // The registry key format is "psi:piece_name"
+        String pieceName = piece.registryKey.getResourcePath();
+        ResourceLocation pieceTexture = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
+
+        try {
+            // Bind the piece texture
+            this.mc.getTextureManager()
+                .bindTexture(pieceTexture);
+
+            // Calculate screen position
+            int screenX = gridLeft + gridX * CELL_SIZE;
+            int screenY = gridTop + gridY * CELL_SIZE;
+
+            // Draw the 16x16 piece icon (centered in 18x18 cell, so offset by 1px)
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            this.drawTexturedModalRect(screenX + 1, screenY + 1, 0, 0, 16, 16);
+
+        } catch (Exception e) {
+            // If texture not found, draw a placeholder (red square)
+            drawRect(
+                gridLeft + gridX * CELL_SIZE + 1,
+                gridTop + gridY * CELL_SIZE + 1,
+                gridLeft + gridX * CELL_SIZE + 17,
+                gridTop + gridY * CELL_SIZE + 17,
+                0xFFFF0000);
+        }
     }
 
     @Override
