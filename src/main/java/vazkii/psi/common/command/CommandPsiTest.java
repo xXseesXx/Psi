@@ -205,7 +205,7 @@ public class CommandPsiTest extends CommandBase {
 
             PieceConstantNumber const2 = new PieceConstantNumber(spell);
             const2.constant = value2;
-            const2.x = 0;
+            const2.x = 1;
             const2.y = 1;
             const2.isInGrid = true;
 
@@ -214,7 +214,7 @@ public class CommandPsiTest extends CommandBase {
             sumOperator.x = 1;
             sumOperator.y = 0;
             sumOperator.isInGrid = true;
-            // Link parameters: num1 from TOP (0,0), num2 from BOTTOM (0,1)
+            // Link parameters: num1 from LEFT (0,0), num2 from BOTTOM (1,1)
             sumOperator.setParamSide(sumOperator.num1, SpellParam.Side.LEFT);
             sumOperator.setParamSide(sumOperator.num2, SpellParam.Side.BOTTOM);
 
@@ -228,7 +228,7 @@ public class CommandPsiTest extends CommandBase {
 
             // Place pieces in grid
             spell.grid.gridData[0][0] = const1;
-            spell.grid.gridData[0][1] = const2;
+            spell.grid.gridData[1][1] = const2;
             spell.grid.gridData[1][0] = sumOperator;
             spell.grid.gridData[2][0] = debugTrick;
 
