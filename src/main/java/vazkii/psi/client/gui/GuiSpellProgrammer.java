@@ -44,10 +44,6 @@ public class GuiSpellProgrammer extends GuiScreen {
     private int selectionTargetX = -1;
     private int selectionTargetY = -1;
 
-    // Parameter connection state
-    private boolean paramSelectionOpen = false;
-    private vazkii.psi.api.spell.SpellParam.Side clickedSide = vazkii.psi.api.spell.SpellParam.Side.OFF;
-
     // Search field for piece list
     private net.minecraft.client.gui.GuiTextField searchField;
 
@@ -187,11 +183,6 @@ public class GuiSpellProgrammer extends GuiScreen {
         if (pieceSelectionOpen) {
             drawPieceSelectionOverlay(mouseX, mouseY);
         }
-
-        // Draw parameter selection overlay (on top of piece selection)
-        if (paramSelectionOpen) {
-            drawParamSelectionOverlay(mouseX, mouseY);
-        }
     }
 
     /**
@@ -276,111 +267,6 @@ public class GuiSpellProgrammer extends GuiScreen {
         selectionTargetY = -1;
         searchField.setVisible(false);
         searchField.setFocused(false);
-    }
-
-    /**
-     * Detect which side of a cell was clicked.
-     * Returns TOP, BOTTOM, LEFT, RIGHT, or OFF if center was clicked.
-     */
-    private vazkii.psi.api.spell.SpellParam.Side detectSideClick(int mouseX, int mouseY, int gridX, int gridY) {
-        int cellX = gridLeft + gridX * CELL_SIZE;
-        int cellY = gridTop + gridY * CELL_SIZE;
-
-        // Get relative position within cell
-        int relX = mouseX - cellX;
-        int relY = mouseY - cellY;
-
-        // Define edge detection zones (3px border on each side)
-        int edgeSize = 4;
-
-        if (relY < edgeSize) {
-            return vazkii.psi.api.spell.SpellParam.Side.TOP;
-        }
-        if (relY >= CELL_SIZE - edgeSize) {
-            return vazkii.psi.api.spell.SpellParam.Side.BOTTOM;
-        }
-        if (relX < edgeSize) {
-            return vazkii.psi.api.spell.SpellParam.Side.LEFT;
-        }
-        if (relX >= CELL_SIZE - edgeSize) {
-            return vazkii.psi.api.spell.SpellParam.Side.RIGHT;
-        }
-
-        return vazkii.psi.api.spell.SpellParam.Side.OFF;
-    }
-
-    /**
-     * Open parameter selection panel for the clicked side.
-     */
-    private void openParamSelection(vazkii.psi.api.spell.SpellParam.Side side) {
-        paramSelectionOpen = true;
-        clickedSide = side;
-    }
-
-    /**
-     * Close parameter selection panel.
-     */
-    private void closeParamSelection() {
-        paramSelectionOpen = false;
-        clickedSide = vazkii.psi.api.spell.SpellParam.Side.OFF;
-    }
-
-    /**
-     * Handle clicks in parameter selection panel.
-     */
-    private void handleParamSelectionClick(int mouseX, int mouseY, int button) {
-        if (button != 0) {
-            closeParamSelection();
-            return;
-        }
-
-        vazkii.psi.api.spell.SpellPiece selectedPiece = editingSpell.grid.gridData[selectedX][selectedY];
-        if (selectedPiece == null || selectedPiece.params.isEmpty()) {
-            closeParamSelection();
-            return;
-        }
-
-        // Calculate panel position
-        int panelX = gridLeft + (selectedX + 1) * CELL_SIZE;
-        int panelY = gridTop + selectedY * CELL_SIZE;
-        int panelWidth = 100;
-        int paramHeight = 12;
-        int panelHeight = paramHeight * selectedPiece.params.size() + 4;
-
-        // Check if click is outside panel
-        if (mouseX < panelX || mouseX >= panelX + panelWidth || mouseY < panelY || mouseY >= panelY + panelHeight) {
-            closeParamSelection();
-            return;
-        }
-
-        // Find which parameter was clicked
-        int relY = mouseY - panelY - 2;
-        int paramIndex = relY / paramHeight;
-
-        if (paramIndex >= 0 && paramIndex < selectedPiece.params.size()) {
-            // Get the param at this index
-            java.util.List<vazkii.psi.api.spell.SpellParam<?>> paramList = new java.util.ArrayList<>(
-                selectedPiece.params.values());
-            vazkii.psi.api.spell.SpellParam<?> selectedParam = paramList.get(paramIndex);
-
-            // Assign this param to the clicked side
-            selectedPiece.paramSides.put(selectedParam, clickedSide);
-
-            System.out.println(
-                "[Psi] Assigned param '" + selectedParam.name
-                    + "' to side "
-                    + clickedSide
-                    + " on piece at ("
-                    + selectedX
-                    + ","
-                    + selectedY
-                    + ")");
-
-            // Sync to server
-            syncSpellToServer();
-
-            closeParamSelection();
-        }
     }
 
     /**
@@ -576,57 +462,6 @@ public class GuiSpellProgrammer extends GuiScreen {
      * Sends a packet with the spell's NBT data so changes persist.
      * 
      * /**
-     * Draw the parameter selection overlay.
-     */
-    private void drawParamSelectionOverlay(int mouseX, int mouseY) {
-        vazkii.psi.api.spell.SpellPiece selectedPiece = editingSpell.grid.gridData[selectedX][selectedY];
-        if (selectedPiece == null || selectedPiece.params.isEmpty()) {
-            closeParamSelection();
-            return;
-        }
-
-        // Calculate panel position (to the right of selected piece)
-        int panelX = gridLeft + (selectedX + 1) * CELL_SIZE;
-        int panelY = gridTop + selectedY * CELL_SIZE;
-        int panelWidth = 100;
-        int paramHeight = 12;
-        int panelHeight = paramHeight * selectedPiece.params.size() + 4;
-
-        // Draw panel background
-        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xCC000000);
-        drawRect(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFF888888); // Top border
-
-        // Draw side indicator
-        String sideText = "Side: " + clickedSide.name();
-        fontRendererObj.drawString(sideText, panelX + 4, panelY + 2, 0xFFFFFF);
-
-        // Draw each parameter as a clickable option
-        int y = panelY + 14;
-        int index = 0;
-        for (vazkii.psi.api.spell.SpellParam<?> param : selectedPiece.params.values()) {
-            boolean hovered = mouseX >= panelX && mouseX < panelX + panelWidth
-                && mouseY >= y
-                && mouseY < y + paramHeight;
-
-            // Highlight if hovered
-            if (hovered) {
-                drawRect(panelX + 2, y, panelX + panelWidth - 2, y + paramHeight, 0x44FFFFFF);
-            }
-
-            // Check if this param is already assigned to the clicked side
-            boolean isAssigned = selectedPiece.paramSides.get(param) == clickedSide;
-            int color = isAssigned ? 0x55FF55 : 0xFFFFFF;
-
-            // Draw parameter name
-            String paramName = param.name;
-            fontRendererObj.drawString(paramName, panelX + 4, y + 2, color);
-
-            y += paramHeight;
-            index++;
-        }
-    }
-
-    /**
      * Synchronize the current spell to the server.
      * Sends a packet with the spell's NBT data so changes persist.
      */
@@ -681,32 +516,13 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
-        // Handle parameter selection overlay clicks
-        if (paramSelectionOpen) {
-            handleParamSelectionClick(mouseX, mouseY, button);
-            return;
-        }
-
         // Only handle grid clicks if cursor is over grid
         if (cursorX < 0 || cursorY < 0) {
             return;
         }
 
-        // Left-click = Select piece OR assign parameter side
+        // Left-click = Select piece
         if (button == 0) {
-            // Check if clicking on an already selected piece
-            if (selectedX == cursorX && selectedY == cursorY) {
-                vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[cursorX][cursorY];
-                if (piece != null && !piece.params.isEmpty()) {
-                    // Detect which side was clicked
-                    vazkii.psi.api.spell.SpellParam.Side side = detectSideClick(mouseX, mouseY, cursorX, cursorY);
-                    if (side.isEnabled()) {
-                        openParamSelection(side);
-                        return;
-                    }
-                }
-            }
-            // Otherwise, just select the piece
             selectedX = cursorX;
             selectedY = cursorY;
             return;
