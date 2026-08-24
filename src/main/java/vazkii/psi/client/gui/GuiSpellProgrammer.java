@@ -106,6 +106,9 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Draw spell pieces on grid FIRST
         drawSpellPieces();
 
+        // Draw parameter connection lines
+        drawConnectionLines();
+
         // Draw selection highlight (blue box) if a cell is selected - AFTER pieces
         if (selectedX >= 0 && selectedY >= 0) {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
@@ -465,6 +468,79 @@ public class GuiSpellProgrammer extends GuiScreen {
      * /**
      * Draw the side configuration panel on the left when a piece with parameters is selected.
      */
+
+    /**
+     * Draw connection lines between spell pieces to show parameter flow.
+     */
+    private void drawConnectionLines() {
+        if (editingSpell == null || editingSpell.grid == null) {
+            return;
+        }
+
+        // Disable textures for line drawing
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glLineWidth(2.0F);
+        GL11.glBegin(GL11.GL_LINES);
+
+        // Iterate through all pieces
+        for (int x = 0; x < GRID_SIZE; x++) {
+            for (int y = 0; y < GRID_SIZE; y++) {
+                vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[x][y];
+                if (piece == null || piece.paramSides.isEmpty()) {
+                    continue;
+                }
+
+                // For each parameter that's connected to a side
+                for (java.util.Map.Entry<vazkii.psi.api.spell.SpellParam<?>, vazkii.psi.api.spell.SpellParam.Side> entry : piece.paramSides
+                    .entrySet()) {
+                    vazkii.psi.api.spell.SpellParam<?> param = entry.getKey();
+                    vazkii.psi.api.spell.SpellParam.Side side = entry.getValue();
+
+                    if (!side.isEnabled()) {
+                        continue; // Skip if side is OFF
+                    }
+
+                    // Calculate the target piece position
+                    int targetX = x + side.offx;
+                    int targetY = y + side.offy;
+
+                    // Check if target is in bounds
+                    if (targetX < 0 || targetX >= GRID_SIZE || targetY < 0 || targetY >= GRID_SIZE) {
+                        continue;
+                    }
+
+                    vazkii.psi.api.spell.SpellPiece targetPiece = editingSpell.grid.gridData[targetX][targetY];
+                    if (targetPiece == null) {
+                        continue; // No piece to connect to
+                    }
+
+                    // Calculate line start and end positions
+                    int startCellX = gridLeft + x * CELL_SIZE + CELL_SIZE / 2;
+                    int startCellY = gridTop + y * CELL_SIZE + CELL_SIZE / 2;
+
+                    int endCellX = gridLeft + targetX * CELL_SIZE + CELL_SIZE / 2;
+                    int endCellY = gridTop + targetY * CELL_SIZE + CELL_SIZE / 2;
+
+                    // Set color based on parameter color
+                    int color = param.color;
+                    float r = ((color >> 16) & 0xFF) / 255.0F;
+                    float g = ((color >> 8) & 0xFF) / 255.0F;
+                    float b = (color & 0xFF) / 255.0F;
+
+                    GL11.glColor4f(r, g, b, 0.8F);
+
+                    // Draw the line
+                    GL11.glVertex2f(startCellX, startCellY);
+                    GL11.glVertex2f(endCellX, endCellY);
+                }
+            }
+        }
+
+        GL11.glEnd();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
     private void drawSideConfigPanel(int mouseX, int mouseY) {
         // Check if we have a selected piece with parameters
         if (selectedX < 0 || selectedY < 0) {

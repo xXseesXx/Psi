@@ -1,0 +1,33 @@
+# Psi Language File (en_US)
+
+# Misc
+psimisc.config=Config
+psimisc.name=Name
+
+# Spell Parameters
+psi.spellparam.target=Target
+psi.spellparam.number=Number
+psi.spellparam.number1=Number A
+psi.spellparam.number2=Number B
+psi.spellparam.number3=Number C
+psi.spellparam.position=Position
+psi.spellparam.ray=Ray
+psi.spellparam.power=Power
+
+# Items
+item.psi.cad.name=Casting Assistant Device
+
+# Blocks
+tile.psi.programmer.name=Spell Programmer
+tile.psi.cad_assembler.name=CAD Assembler
+
+# Spell Pieces
+psi.spellpiece.constant_number=Constant: Number
+psi.spellpiece.constant_string=Constant: String
+psi.spellpiece.operator_sum=Operator: Sum
+psi.spellpiece.selector_caster=Selector: Caster
+psi.spellpiece.selector_raycast=Selector: Vector Raycast
+psi.spellpiece.selector_entity_position=Operator: Entity Position
+psi.spellpiece.trick_debug=Trick: Debug
+psi.spellpiece.trick_break_block=Trick: Break Block
+psi.spellpiece.trick_explode=Trick: Explode
