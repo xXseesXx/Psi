@@ -16,9 +16,13 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
 import vazkii.psi.api.internal.Vector3;
+import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.api.spell.SpellContext;
+import vazkii.psi.api.spell.SpellParam;
 import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.common.spell.constant.PieceConstantString;
 import vazkii.psi.common.spell.operator.PieceOperatorSum;
 import vazkii.psi.common.spell.selector.PieceSelectorRaycast;
 import vazkii.psi.common.spell.trick.PieceTrickBreakBlock;
@@ -100,43 +104,42 @@ public class CommandPsiTest extends CommandBase {
         }
 
         try {
-            // Create a simple spell with just PieceTrickDebug
+            // Create a spell with proper grid: [Constant: message] -> [Trick: Debug]
             Spell spell = new Spell();
             spell.name = "Debug Test";
 
-            PieceTrickDebug trick = new PieceTrickDebug(spell);
-            trick.x = 0;
-            trick.y = 0;
-            trick.isInGrid = true;
+            // Create a constant piece that holds the message
+            PieceConstantString messageConstant = new PieceConstantString(spell);
+            messageConstant.constant = message;
+            messageConstant.x = 0;
+            messageConstant.y = 0;
+            messageConstant.isInGrid = true;
+            messageConstant.initParams();
 
-            // Place in grid
-            spell.grid[0][0] = trick;
+            // Create the debug trick
+            PieceTrickDebug debugTrick = new PieceTrickDebug(spell);
+            debugTrick.x = 1;
+            debugTrick.y = 0;
+            debugTrick.isInGrid = true;
+            debugTrick.initParams();
 
-            // Create context
+            // Link the constant to the trick's target parameter (from the LEFT)
+            debugTrick.setParamSide(debugTrick.target, SpellParam.Side.LEFT);
+
+            // Place pieces in grid
+            spell.grid.gridData[0][0] = messageConstant;
+            spell.grid.gridData[1][0] = debugTrick;
+
+            // Compile the spell
+            SpellCompiler compiler = new SpellCompiler();
+            CompiledSpell compiled = compiler.compile(spell);
+
+            // Create context and execute
             SpellContext context = new SpellContext();
             context.setPlayer(player);
             context.setSpell(spell);
 
-            // For now, we'll execute the trick directly
-            // In Phase 7, this will go through proper spell compilation/execution
-
-            // Since we don't have parameter linking yet, we'll create a simple wrapper
-            // that returns the message when getParamValue is called
-            PieceTrickDebug hackTrick = new PieceTrickDebug(spell) {
-
-                @Override
-                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
-                    throws SpellRuntimeException {
-                    // Return the message for the target parameter
-                    if (param == this.target) {
-                        return (T) message;
-                    }
-                    // No number parameter
-                    return null;
-                }
-            };
-
-            hackTrick.execute(context);
+            compiled.execute(context);
 
             // Success feedback
             sender.addChatMessage(

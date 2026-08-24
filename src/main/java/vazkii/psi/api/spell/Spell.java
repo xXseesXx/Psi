@@ -16,20 +16,14 @@ package vazkii.psi.api.spell;
 public class Spell {
 
     /**
-     * Size of the spell grid.
-     */
-    public static final int GRID_SIZE = 9;
-
-    /**
      * Metadata for this spell (stats, flags).
      */
     public final SpellMetadata metadata = new SpellMetadata();
 
     /**
-     * The spell grid (9x9 array of pieces).
-     * Full implementation in Phase 7.
+     * The spell grid containing all pieces.
      */
-    public SpellPiece[][] grid = new SpellPiece[GRID_SIZE][GRID_SIZE];
+    public final SpellGrid grid;
 
     /**
      * Name of this spell.
@@ -37,7 +31,7 @@ public class Spell {
     public String name = "";
 
     public Spell() {
-        // Stub constructor
+        this.grid = new SpellGrid(this);
     }
 
 }

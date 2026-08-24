@@ -121,13 +121,51 @@ public abstract class SpellPiece {
 
     /**
      * Gets the value of a parameter by executing the piece connected to it.
-     * Full implementation in Phase 7 when piece linking is added.
+     * This reads from the evaluatedObjects grid which is populated during spell execution.
      */
     @SuppressWarnings("unchecked")
     public <T> T getParamValue(SpellContext context, SpellParam<T> param) throws SpellRuntimeException {
-        // STUB: Will be implemented in Phase 7 with grid traversal
-        // For now, just return null
-        return null;
+        T returnValue = (T) getRawParamValue(context, param);
+
+        // Validate numeric values
+        if (returnValue instanceof Number) {
+            Number number = (Number) returnValue;
+            double d = number.doubleValue();
+            if (Double.isNaN(d) || Double.isInfinite(d)) {
+                throw new SpellRuntimeException(SpellRuntimeException.NAN);
+            }
+        }
+
+        return returnValue;
+    }
+
+    /**
+     * Gets the raw value of a parameter from the evaluated objects grid.
+     * This is called by getParamValue after validation.
+     */
+    public Object getRawParamValue(SpellContext context, SpellParam<?> param) {
+        SpellParam.Side side = paramSides.get(param);
+
+        // If parameter is not enabled (optional parameter not set), return null
+        if (side == null || !side.isEnabled()) {
+            return null;
+        }
+
+        // Get the piece at this side
+        int targetX = x + side.offx;
+        int targetY = y + side.offy;
+
+        if (!SpellGrid.exists(targetX, targetY)) {
+            return null;
+        }
+
+        SpellPiece piece = spell.grid.gridData[targetX][targetY];
+        if (piece == null || !param.canAccept(piece)) {
+            return null;
+        }
+
+        // Return the evaluated value from the context grid
+        return context.evaluatedObjects[piece.x][piece.y];
     }
 
     /**

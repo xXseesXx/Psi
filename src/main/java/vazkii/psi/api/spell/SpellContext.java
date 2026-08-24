@@ -65,6 +65,18 @@ public final class SpellContext {
      */
     public int loopcastIndex = 0;
 
+    /**
+     * Grid storing evaluated values from spell pieces during execution.
+     * Used by getParamValue() to retrieve results from parameter pieces.
+     */
+    public Object[][] evaluatedObjects = new Object[SpellGrid.GRID_SIZE][SpellGrid.GRID_SIZE];
+
+    /**
+     * Flag indicating if spell execution should stop.
+     * Used by tricks that want to halt execution early.
+     */
+    public boolean stopped = false;
+
     // End Runtime information ===========================================================
 
     /**
