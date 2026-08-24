@@ -621,8 +621,8 @@ public class GuiSpellProgrammer extends GuiScreen {
             .bindTexture(TEXTURE);
         this.drawTexturedModalRect(guiLeft - 81, guiTop + 55, xSize, 30, 81, 115);
 
-        // Draw "Config" label
-        String configText = "Config";
+        // Draw "Config" label (translated)
+        String configText = net.minecraft.client.resources.I18n.format("psimisc.config");
         fontRendererObj
             .drawString(configText, guiLeft - fontRendererObj.getStringWidth(configText) - 2, guiTop + 45, 0xFFFFFF);
 
@@ -640,8 +640,9 @@ public class GuiSpellProgrammer extends GuiScreen {
                 .bindTexture(TEXTURE);
             this.drawTexturedModalRect(panelX + 50, panelY - 8, xSize, 145, 24, 24);
 
-            // Draw parameter name
-            fontRendererObj.drawString(param.name, panelX, panelY, 0xFFFFFF);
+            // Draw parameter name (translated)
+            String translatedName = net.minecraft.client.resources.I18n.format(param.name);
+            fontRendererObj.drawString(translatedName, panelX, panelY, 0xFFFFFF);
 
             // Draw side buttons (OFF, TOP, BOTTOM, LEFT, RIGHT)
             drawSideButtons(panelX, panelY, paramIndex, param, piece, mouseX, mouseY);
