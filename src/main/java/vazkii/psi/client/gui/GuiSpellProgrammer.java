@@ -107,7 +107,10 @@ public class GuiSpellProgrammer extends GuiScreen {
             cursorY = -1;
         }
 
-        // Draw selection highlight (blue box) if a cell is selected
+        // Draw spell pieces on grid FIRST
+        drawSpellPieces();
+
+        // Draw selection highlight (blue box) if a cell is selected - AFTER pieces
         if (selectedX >= 0 && selectedY >= 0) {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.mc.getTextureManager()
@@ -122,7 +125,7 @@ public class GuiSpellProgrammer extends GuiScreen {
                 16);
         }
 
-        // Draw hover highlight overlay from texture (only when piece list is NOT open)
+        // Draw hover highlight overlay from texture (only when piece list is NOT open) - AFTER pieces
         if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.mc.getTextureManager()
@@ -136,9 +139,6 @@ public class GuiSpellProgrammer extends GuiScreen {
                 16,
                 16);
         }
-
-        // Draw spell pieces on grid (Milestone 4)
-        drawSpellPieces();
 
         // Draw tooltips for hovered pieces (only when piece selection is NOT open)
         if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
