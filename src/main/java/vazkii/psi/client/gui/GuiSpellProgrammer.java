@@ -212,9 +212,9 @@ public class GuiSpellProgrammer extends GuiScreen {
         int screenX = gridLeft + gridX * CELL_SIZE;
         int screenY = gridTop + gridY * CELL_SIZE;
 
-        // Use texture atlas to draw piece (centered in 18x18 cell, so offset by 1px)
+        // Draw piece at grid position (icons are already 18x18 with transparent borders)
         PieceTextureAtlas.getInstance()
-            .drawPiece(piece.registryKey.toString(), screenX + 1, screenY + 1);
+            .drawPiece(piece.registryKey.toString(), screenX, screenY);
     }
 
     @Override
@@ -337,9 +337,9 @@ public class GuiSpellProgrammer extends GuiScreen {
                 drawRect(btnX, btnY, btnX + buttonSize, btnY + buttonSize, 0x885555FF);
             }
 
-            // Draw piece icon using texture atlas (16x16 centered in 18x18 button)
+            // Draw piece icon using texture atlas (icons are 18x18 with transparent borders)
             PieceTextureAtlas.getInstance()
-                .drawPiece(pieceId, btnX + 1, btnY + 1);
+                .drawPiece(pieceId, btnX, btnY);
 
             // Store tooltip for rendering last
             if (hovered) {

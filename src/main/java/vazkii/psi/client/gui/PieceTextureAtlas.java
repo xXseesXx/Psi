@@ -25,7 +25,7 @@ public class PieceTextureAtlas {
     private final ResourceLocation atlasLocation;
     private final Map<String, UVCoords> uvMap = new HashMap<>();
 
-    private static final int ICON_SIZE = 16;
+    private static final int ICON_SIZE = 18; // Icons are 18x18 with transparent borders
     private static final int ATLAS_WIDTH = 256;
     private static final int ATLAS_HEIGHT = 256;
 
