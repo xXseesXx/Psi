@@ -26,17 +26,18 @@
 - ✅ **BlockPosCompat** - Block position wrapper (1.7.10 doesn't have BlockPos)
 - ✅ **ResourceLocationCompat** - Resource location factory
 
-**Next**: Phase 1 - Spell Core API (enums, exceptions, parameters)
-
-### ⏳ Phase 1: Spell Core API (Not Started)
-**Estimated**: 2-3 hours  
-**Files**: ~10 classes
+### ✅ Phase 1: Spell Core API (Complete)
+**Time**: ~5 minutes  
+**Files**: 11/11 created
 
 Core spell system without Minecraft world interaction:
-- EnumSpellStat, EnumPieceType
-- SpellRuntimeException, SpellCompilationException
-- SpellParam + param types (ParamAny, ParamNumber, ParamVector, ParamEntity)
-- StatLabel
+- ✅ EnumSpellStat, EnumPieceType
+- ✅ SpellRuntimeException, SpellCompilationException
+- ✅ SpellParam + param types (ParamAny, ParamNumber, ParamVector, ParamEntity)
+- ✅ StatLabel
+- ✅ SpellPiece (minimal stub)
+
+**Next**: Phase 2 - Spell Context & Execution
 
 ### ⏳ Phase 2: Spell Context & Execution (Not Started)
 **Estimated**: 2-3 hours  
@@ -98,11 +99,12 @@ Spell execution framework:
 ## Milestones
 
 1. ✅ **M0**: Foundation classes compile
-2. ⏳ **M1**: `/psitest debug` shows chat message
-3. ⏳ **M2**: `/psitest math` performs calculation
-4. ⏳ **M3**: `/psitest break` breaks looked-at block
-5. ⏳ **M4**: `/psitest explode` creates explosion
-6. ⏳ **M5**: Multi-piece spell with parameter linking
+2. ✅ **M0.5**: Core spell API compiles (Phase 1)
+3. ⏳ **M1**: `/psitest debug` shows chat message
+4. ⏳ **M2**: `/psitest math` performs calculation
+5. ⏳ **M3**: `/psitest break` breaks looked-at block
+6. ⏳ **M4**: `/psitest explode` creates explosion
+7. ⏳ **M5**: Multi-piece spell with parameter linking
 
 ## Testing Strategy
 
@@ -127,8 +129,24 @@ Psi-1.7.10-backport/
 │   │   └── ResourceLocationCompat.java   ✅
 │   │
 │   ├── api/
-│   │   └── internal/
-│   │       └── Vector3.java              ✅
+│   │   ├── internal/
+│   │   │   └── Vector3.java              ✅
+│   │   │
+│   │   └── spell/
+│   │       ├── EnumSpellStat.java        ✅
+│   │       ├── EnumPieceType.java        ✅
+│   │       ├── StatLabel.java            ✅
+│   │       ├── SpellCompilationException.java  ✅
+│   │       ├── SpellRuntimeException.java      ✅
+│   │       ├── SpellParam.java           ✅
+│   │       ├── SpellPiece.java (stub)    ✅
+│   │       │
+│   │       └── param/
+│   │           ├── ParamSpecific.java    ✅
+│   │           ├── ParamAny.java         ✅
+│   │           ├── ParamNumber.java      ✅
+│   │           ├── ParamVector.java      ✅
+│   │           └── ParamEntity.java      ✅
 │   │
 │   ├── common/
 │   │   ├── Psi.java                      ✅ (stub)
@@ -148,10 +166,10 @@ Psi-1.7.10-backport/
 ## Next Immediate Actions
 
 1. ✅ Complete Phase 0
-2. ⏳ Start Phase 1.1 - Port EnumSpellStat
-3. ⏳ Create Phase 1 progress tracker
-4. ⏳ Port remaining Phase 1 enums and exceptions
-5. ⏳ Create unit tests for Phase 1
+2. ✅ Complete Phase 1
+3. ⏳ Start Phase 2.1 - Port SpellContext (minimal version)
+4. ⏳ Port SpellMetadata
+5. ⏳ Port SpellPiece base class (replace stub)
 
 ## Blockers & Issues
 
@@ -167,14 +185,14 @@ Psi-1.7.10-backport/
 | Phase | Estimated | Actual | Status |
 |-------|-----------|--------|--------|
 | Phase 0 | 4-6h | 0.5h | ✅ Complete |
-| Phase 1 | 2-3h | - | ⏳ Not Started |
+| Phase 1 | 2-3h | 0.08h | ✅ Complete |
 | Phase 2 | 2-3h | - | ⏳ Not Started |
 | Phase 3 | 3-4h | - | ⏳ Not Started |
 | Phase 4 | 2-3h | - | ⏳ Not Started |
 | Phase 5 | 4-5h | - | ⏳ Not Started |
 | Phase 6 | 1-2h | - | ⏳ Not Started |
 | Phase 7 | 4-6h | - | ⏳ Not Started |
-| **Total** | **22-32h** | **0.5h** | **3% Complete** |
+| **Total** | **22-32h** | **0.58h** | **8% Complete** |
 
 ## Communication & Knowledge Base
 
