@@ -80,4 +80,16 @@ public class SpellGrid {
 
         return Math.max(rightmost - leftmost + 1, bottommost - topmost + 1);
     }
+
+    /**
+     * Get the piece at the specified side of the given position, or null if out of bounds or empty.
+     */
+    public SpellPiece getPieceAtSideSafely(int x, int y, SpellParam.Side side) {
+        int xp = x + side.offx;
+        int yp = y + side.offy;
+        if (!exists(xp, yp)) {
+            return null;
+        }
+        return gridData[xp][yp];
+    }
 }

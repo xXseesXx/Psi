@@ -156,6 +156,25 @@ public abstract class SpellParam<T> {
         public boolean isEnabled() {
             return this != OFF;
         }
+
+        public Side getOpposite() {
+            switch (this) {
+                case TOP:
+                    return BOTTOM;
+                case BOTTOM:
+                    return TOP;
+                case LEFT:
+                    return RIGHT;
+                case RIGHT:
+                    return LEFT;
+                default:
+                    return OFF;
+            }
+        }
+
+        public int asInt() {
+            return ordinal();
+        }
     }
 
 }

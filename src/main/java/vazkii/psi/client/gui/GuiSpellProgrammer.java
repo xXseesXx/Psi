@@ -470,19 +470,17 @@ public class GuiSpellProgrammer extends GuiScreen {
      */
 
     /**
-     * Draw connection lines between spell pieces to show parameter flow.
+     * Draw parameter arrows on spell pieces to show connections. Matches 1.21.1 implementation.
      */
     private void drawConnectionLines() {
         if (editingSpell == null || editingSpell.grid == null) {
             return;
         }
 
-        // Disable textures for line drawing
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glLineWidth(2.0F);
-        GL11.glBegin(GL11.GL_LINES);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
-        // Iterate through all pieces
+        // Iterate through all pieces and draw their parameter arrows
         for (int x = 0; x < GRID_SIZE; x++) {
             for (int y = 0; y < GRID_SIZE; y++) {
                 vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[x][y];
@@ -490,55 +488,112 @@ public class GuiSpellProgrammer extends GuiScreen {
                     continue;
                 }
 
-                // For each parameter that's connected to a side
+                // Draw each parameter arrow on this piece
                 for (java.util.Map.Entry<vazkii.psi.api.spell.SpellParam<?>, vazkii.psi.api.spell.SpellParam.Side> entry : piece.paramSides
                     .entrySet()) {
                     vazkii.psi.api.spell.SpellParam<?> param = entry.getKey();
                     vazkii.psi.api.spell.SpellParam.Side side = entry.getValue();
 
                     if (!side.isEnabled()) {
-                        continue; // Skip if side is OFF
-                    }
-
-                    // Calculate the target piece position
-                    int targetX = x + side.offx;
-                    int targetY = y + side.offy;
-
-                    // Check if target is in bounds
-                    if (targetX < 0 || targetX >= GRID_SIZE || targetY < 0 || targetY >= GRID_SIZE) {
                         continue;
                     }
 
-                    vazkii.psi.api.spell.SpellPiece targetPiece = editingSpell.grid.gridData[targetX][targetY];
-                    if (targetPiece == null) {
-                        continue; // No piece to connect to
+                    // Calculate arrow index (which arrow on this side) and count (total arrows on this side)
+                    int index = getParamArrowIndex(piece, param);
+                    int count = getParamArrowCount(piece, side);
+
+                    // If there's a neighbor piece, adjust positioning to avoid overlap
+                    vazkii.psi.api.spell.SpellPiece neighbor = editingSpell.grid.getPieceAtSideSafely(x, y, side);
+                    if (neighbor != null) {
+                        int nbCount = getParamArrowCount(neighbor, side.getOpposite());
+                        if (side.asInt() > side.getOpposite()
+                            .asInt()) {
+                            index += nbCount;
+                        }
+                        count += nbCount;
                     }
 
-                    // Calculate line start and end positions
-                    int startCellX = gridLeft + x * CELL_SIZE + CELL_SIZE / 2;
-                    int startCellY = gridTop + y * CELL_SIZE + CELL_SIZE / 2;
+                    // Calculate position percentage along the edge
+                    float percent = 0.5F;
+                    if (count > 1) {
+                        percent = (float) index / (count - 1);
+                    }
 
-                    int endCellX = gridLeft + targetX * CELL_SIZE + CELL_SIZE / 2;
-                    int endCellY = gridTop + targetY * CELL_SIZE + CELL_SIZE / 2;
-
-                    // Set color based on parameter color
-                    int color = param.color;
-                    float r = ((color >> 16) & 0xFF) / 255.0F;
-                    float g = ((color >> 8) & 0xFF) / 255.0F;
-                    float b = (color & 0xFF) / 255.0F;
-
-                    GL11.glColor4f(r, g, b, 0.8F);
-
-                    // Draw the line
-                    GL11.glVertex2f(startCellX, startCellY);
-                    GL11.glVertex2f(endCellX, endCellY);
+                    // Draw the arrow
+                    drawParamArrow(x, y, side, param.color, percent);
                 }
             }
         }
 
-        GL11.glEnd();
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    /**
+     * Get the index of this parameter's arrow among all arrows on the same side.
+     */
+    private int getParamArrowIndex(vazkii.psi.api.spell.SpellPiece piece, vazkii.psi.api.spell.SpellParam<?> target) {
+        int index = 0;
+        for (vazkii.psi.api.spell.SpellParam<?> param : piece.paramSides.keySet()) {
+            if (param == target) {
+                return index;
+            }
+            if (piece.paramSides.get(param) == piece.paramSides.get(target)) {
+                index++;
+            }
+        }
+        return index;
+    }
+
+    /**
+     * Count how many parameter arrows are on this side of the piece.
+     */
+    private int getParamArrowCount(vazkii.psi.api.spell.SpellPiece piece, vazkii.psi.api.spell.SpellParam.Side side) {
+        int count = 0;
+        for (vazkii.psi.api.spell.SpellParam<?> param : piece.paramSides.keySet()) {
+            if (piece.paramSides.get(param) == side) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Draw a single parameter arrow at the specified position with color.
+     */
+    private void drawParamArrow(int pieceX, int pieceY, vazkii.psi.api.spell.SpellParam.Side side, int color,
+        float percent) {
+        // Calculate position on the edge of the piece
+        // side.minx/miny/maxx/maxy define the bounding box for arrow placement
+        float minX = 4 + side.minx * percent + side.maxx * (1 - percent);
+        float minY = 4 + side.miny * percent + side.maxy * (1 - percent);
+        float maxX = minX + 8;
+        float maxY = minY + 8;
+
+        // Convert to screen coordinates
+        int screenX = gridLeft + pieceX * CELL_SIZE;
+        int screenY = gridTop + pieceY * CELL_SIZE;
+
+        // Extract color components
+        float r = ((color >> 16) & 0xFF) / 255.0F;
+        float g = ((color >> 8) & 0xFF) / 255.0F;
+        float b = (color & 0xFF) / 255.0F;
+
+        GL11.glColor4f(r, g, b, 1.0F);
+
+        // Texture coordinates for the arrow sprite (8x8 pixels)
+        float minU = side.u / 256.0F;
+        float minV = side.v / 256.0F;
+        float maxU = (side.u + 8) / 256.0F;
+        float maxV = (side.v + 8) / 256.0F;
+
+        // Draw the arrow quad
+        net.minecraft.client.renderer.Tessellator tess = net.minecraft.client.renderer.Tessellator.instance;
+        tess.startDrawingQuads();
+        tess.addVertexWithUV(screenX + minX, screenY + maxY, zLevel, minU, maxV);
+        tess.addVertexWithUV(screenX + maxX, screenY + maxY, zLevel, maxU, maxV);
+        tess.addVertexWithUV(screenX + maxX, screenY + minY, zLevel, maxU, minV);
+        tess.addVertexWithUV(screenX + minX, screenY + minY, zLevel, minU, minV);
+        tess.draw();
     }
 
     private void drawSideConfigPanel(int mouseX, int mouseY) {
