@@ -11,6 +11,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.common.Psi;
+import vazkii.psi.common.core.handler.GuiHandler;
 import vazkii.psi.common.entity.EntitySpellProjectile;
 
 /**
@@ -30,11 +32,21 @@ public class ItemCAD extends Item {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        // Don't execute on client
+        // Shift+Right-Click: Open spell programmer GUI
+        if (player.isSneaking()) {
+            if (world.isRemote) {
+                // Open GUI only on client side
+                player.openGui(Psi.instance, GuiHandler.GUI_SPELL_PROGRAMMER, world, 0, 0, 0);
+            }
+            return stack;
+        }
+
+        // Don't execute spell casting on client
         if (world.isRemote) {
             return stack;
         }
 
+        // Normal Right-Click: Cast spell
         Spell spell = getSpell(stack);
 
         if (spell == null) {

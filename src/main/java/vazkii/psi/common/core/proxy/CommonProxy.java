@@ -7,10 +7,12 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import vazkii.psi.common.Psi;
 import vazkii.psi.common.core.handler.ConfigHandler;
+import vazkii.psi.common.core.handler.GuiHandler;
 import vazkii.psi.common.entity.EntitySpellProjectile;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.lib.LibMisc;
@@ -36,6 +38,10 @@ public class CommonProxy {
     }
 
     public void init(FMLInitializationEvent event) {
+        // Register GUI handler
+        NetworkRegistry.INSTANCE.registerGuiHandler(Psi.instance, new GuiHandler());
+        Psi.logger.info("Registered GuiHandler");
+
         // Register entities
         EntityRegistry.registerModEntity(
             EntitySpellProjectile.class,
