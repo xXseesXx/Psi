@@ -127,4 +127,29 @@ public abstract class SpellParam<T> {
     public static class Any {
     }
 
+    /**
+     * Helper Enum for the various sides a parameter can take.
+     */
+    public enum Side {
+
+        OFF(0, 0),
+        TOP(0, -1),
+        BOTTOM(0, 1),
+        LEFT(-1, 0),
+        RIGHT(1, 0);
+
+        public static final Side[] DIRECTIONS = new Side[] { TOP, BOTTOM, LEFT, RIGHT };
+
+        public final int offx, offy;
+
+        Side(int offx, int offy) {
+            this.offx = offx;
+            this.offy = offy;
+        }
+
+        public boolean isEnabled() {
+            return this != OFF;
+        }
+    }
+
 }
