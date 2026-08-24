@@ -97,6 +97,39 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Draw spell pieces on grid (Milestone 4)
         drawSpellPieces();
 
+        // Draw tooltips for hovered pieces
+        if (cursorX >= 0 && cursorY >= 0) {
+            vazkii.psi.api.spell.SpellPiece hoveredPiece = editingSpell.grid.gridData[cursorX][cursorY];
+            if (hoveredPiece != null) {
+                // Simple tooltip showing piece name from registry key
+                String pieceName = hoveredPiece.registryKey.toString();
+                // Make it more readable: "psi:trick_break_block" -> "Trick Break Block"
+                String[] parts = pieceName.split(":");
+                if (parts.length == 2) {
+                    pieceName = parts[1].replace("_", " ");
+                    // Capitalize first letter of each word
+                    String[] words = pieceName.split(" ");
+                    StringBuilder formatted = new StringBuilder();
+                    for (String word : words) {
+                        if (word.length() > 0) {
+                            formatted.append(Character.toUpperCase(word.charAt(0)));
+                            if (word.length() > 1) {
+                                formatted.append(word.substring(1));
+                            }
+                            formatted.append(" ");
+                        }
+                    }
+                    pieceName = formatted.toString()
+                        .trim();
+                }
+
+                // Draw tooltip
+                java.util.List<String> tooltip = new java.util.ArrayList<>();
+                tooltip.add(pieceName);
+                this.drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
+            }
+        }
+
         // Draw spell name if editing existing spell
         if (editingSpell != null && editingSpell.name != null && !editingSpell.name.isEmpty()) {
             String spellName = editingSpell.name;
@@ -135,29 +168,37 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Get the piece's texture based on its registry key
         // The registry key format is "psi:piece_name"
         String pieceName = piece.registryKey.getResourcePath();
-        ResourceLocation pieceTexture = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
+
+        // In 1.7.10, texture paths don't include "textures/" prefix in ResourceLocation
+        // The path should be: "psi:spell/piece_name.png"
+        // which resolves to: assets/psi/textures/spell/piece_name.png
+        ResourceLocation pieceTexture = new ResourceLocation(
+            piece.registryKey.getResourceDomain(),
+            "textures/spell/" + pieceName + ".png");
+
+        // Calculate screen position
+        int screenX = gridLeft + gridX * CELL_SIZE;
+        int screenY = gridTop + gridY * CELL_SIZE;
 
         try {
             // Bind the piece texture
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.mc.getTextureManager()
                 .bindTexture(pieceTexture);
 
-            // Calculate screen position
-            int screenX = gridLeft + gridX * CELL_SIZE;
-            int screenY = gridTop + gridY * CELL_SIZE;
-
             // Draw the 16x16 piece icon (centered in 18x18 cell, so offset by 1px)
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.drawTexturedModalRect(screenX + 1, screenY + 1, 0, 0, 16, 16);
 
         } catch (Exception e) {
-            // If texture not found, draw a placeholder (red square)
-            drawRect(
-                gridLeft + gridX * CELL_SIZE + 1,
-                gridTop + gridY * CELL_SIZE + 1,
-                gridLeft + gridX * CELL_SIZE + 17,
-                gridTop + gridY * CELL_SIZE + 17,
-                0xFFFF0000);
+            // If texture not found, draw a gray placeholder square with piece name initial
+            drawRect(screenX + 1, screenY + 1, screenX + 17, screenY + 17, 0xFF808080);
+
+            // Draw first letter of piece name for debugging
+            if (pieceName.length() > 0) {
+                String initial = String.valueOf(pieceName.charAt(0))
+                    .toUpperCase();
+                fontRendererObj.drawString(initial, screenX + 6, screenY + 5, 0xFFFFFF);
+            }
         }
     }
 

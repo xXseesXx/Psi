@@ -246,6 +246,15 @@ public abstract class SpellPiece {
             return null;
         }
 
+        // Fix the registryKey to use the proper ID from NBT (not the class name placeholder)
+        try {
+            java.lang.reflect.Field keyField = SpellPiece.class.getDeclaredField("registryKey");
+            keyField.setAccessible(true);
+            keyField.set(piece, new ResourceLocation(id));
+        } catch (Exception e) {
+            System.err.println("[Psi] Failed to set registryKey: " + e.getMessage());
+        }
+
         // Load parameter sides
         net.minecraft.nbt.NBTTagCompound sidesNbt = nbt.getCompoundTag("paramSides");
         for (SpellParam<?> param : piece.params.values()) {
