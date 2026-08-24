@@ -2,7 +2,6 @@
  * This class is distributed as part of the Psi Mod.
  * Get the Source Code in GitHub:
  * https://github.com/Vazkii/Psi
- *
  * Psi is Open Source and distributed under the
  * Psi License: https://psi.vazkii.net/license.php
  */
@@ -18,6 +17,7 @@ import net.minecraftforge.common.util.ForgeDirection;
  * its functionality here.
  */
 public class BlockPosCompat {
+
     public final int x;
     public final int y;
     public final int z;
@@ -49,11 +49,7 @@ public class BlockPosCompat {
      * Returns a new BlockPos offset by the given direction and distance
      */
     public BlockPosCompat offset(ForgeDirection direction, int distance) {
-        return offset(
-            direction.offsetX * distance,
-            direction.offsetY * distance,
-            direction.offsetZ * distance
-        );
+        return offset(direction.offsetX * distance, direction.offsetY * distance, direction.offsetZ * distance);
     }
 
     /**
