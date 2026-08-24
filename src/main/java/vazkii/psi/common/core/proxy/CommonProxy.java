@@ -42,6 +42,10 @@ public class CommonProxy {
         NetworkRegistry.INSTANCE.registerGuiHandler(Psi.instance, new GuiHandler());
         Psi.logger.info("Registered GuiHandler");
 
+        // Register packet handler for client-server communication
+        vazkii.psi.common.network.PacketHandler.init();
+        Psi.logger.info("Registered PacketHandler");
+
         // Register entities
         EntityRegistry.registerModEntity(
             EntitySpellProjectile.class,

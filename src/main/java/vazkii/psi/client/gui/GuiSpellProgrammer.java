@@ -2,6 +2,7 @@ package vazkii.psi.client.gui;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -444,12 +445,32 @@ public class GuiSpellProgrammer extends GuiScreen {
 
                 // Place on grid
                 editingSpell.grid.gridData[gridX][gridY] = newPiece;
+
+                // Sync to server immediately
+                syncSpellToServer();
             } else {
                 System.err.println("[Psi] Failed to create piece: " + pieceId + " (create returned null)");
             }
         } catch (Exception e) {
             System.err.println("Failed to create spell piece: " + pieceId);
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Synchronize the current spell to the server.
+     * Sends a packet with the spell's NBT data so changes persist.
+     */
+    private void syncSpellToServer() {
+        if (editingSpell != null && cadStack != null) {
+            NBTTagCompound spellNBT = new NBTTagCompound();
+            editingSpell.writeToNBT(spellNBT);
+
+            // Send packet to server
+            vazkii.psi.common.network.PacketHandler.INSTANCE
+                .sendToServer(new vazkii.psi.common.network.PacketSpellUpdate(editingSpell));
+
+            System.out.println("[Psi] Synced spell '" + editingSpell.name + "' to server");
         }
     }
 
@@ -510,6 +531,7 @@ public class GuiSpellProgrammer extends GuiScreen {
             // Right-click + Shift = Delete piece
             if (isShiftKeyDown() && existingPiece != null) {
                 editingSpell.grid.gridData[cursorX][cursorY] = null;
+                syncSpellToServer(); // Sync deletion to server
                 return;
             }
 
