@@ -1,0 +1,3 @@
+// Add extra constants to the generated LibMisc class
+gradleTokenModId = "MOD_ID"
+gradleTokenModName = "MOD_NAME"
