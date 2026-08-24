@@ -183,6 +183,9 @@ public class GuiSpellProgrammer extends GuiScreen {
         if (pieceSelectionOpen) {
             drawPieceSelectionOverlay(mouseX, mouseY);
         }
+
+        // Draw side configuration panel if a piece with parameters is selected
+        drawSideConfigPanel(mouseX, mouseY);
     }
 
     /**
@@ -458,10 +461,109 @@ public class GuiSpellProgrammer extends GuiScreen {
     }
 
     /**
-     * Synchronize the current spell to the server.
-     * Sends a packet with the spell's NBT data so changes persist.
      * 
      * /**
+     * Draw the side configuration panel on the left when a piece with parameters is selected.
+     */
+    private void drawSideConfigPanel(int mouseX, int mouseY) {
+        // Check if we have a selected piece with parameters
+        if (selectedX < 0 || selectedY < 0) {
+            return;
+        }
+
+        vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[selectedX][selectedY];
+        if (piece == null || piece.params.isEmpty()) {
+            return;
+        }
+
+        // Draw panel background (texture from programmer.png at xSize, 30)
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
+        this.drawTexturedModalRect(guiLeft - 81, guiTop + 55, xSize, 30, 81, 115);
+
+        // Draw "Config" label
+        String configText = "Config";
+        fontRendererObj
+            .drawString(configText, guiLeft - fontRendererObj.getStringWidth(configText) - 2, guiTop + 45, 0xFFFFFF);
+
+        // Draw each parameter with its side buttons
+        int paramIndex = 0;
+        for (String paramName : piece.params.keySet()) {
+            vazkii.psi.api.spell.SpellParam<?> param = piece.params.get(paramName);
+
+            int panelX = guiLeft - 75;
+            int panelY = guiTop + 70 + paramIndex * 26;
+
+            // Draw parameter icon background (24x24 slot at xSize, 145)
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
+            this.drawTexturedModalRect(panelX + 50, panelY - 8, xSize, 145, 24, 24);
+
+            // Draw parameter name
+            fontRendererObj.drawString(param.name, panelX, panelY, 0xFFFFFF);
+
+            // Draw side buttons (OFF, TOP, BOTTOM, LEFT, RIGHT)
+            drawSideButtons(panelX, panelY, paramIndex, param, piece, mouseX, mouseY);
+
+            paramIndex++;
+        }
+    }
+
+    /**
+     * Draw the 5 side configuration buttons for a parameter.
+     */
+    private void drawSideButtons(int x, int y, int paramIndex, vazkii.psi.api.spell.SpellParam<?> param,
+        vazkii.psi.api.spell.SpellPiece piece, int mouseX, int mouseY) {
+        // Button positions around the parameter icon
+        // Center button (OFF) is at (x+58, y)
+        // Others are offset by 8 pixels in their direction
+
+        vazkii.psi.api.spell.SpellParam.Side currentSide = piece.paramSides.get(param);
+        if (currentSide == null) {
+            currentSide = vazkii.psi.api.spell.SpellParam.Side.OFF;
+        }
+
+        for (vazkii.psi.api.spell.SpellParam.Side side : vazkii.psi.api.spell.SpellParam.Side.values()) {
+            // Skip OFF if param can't be disabled
+            if (side == vazkii.psi.api.spell.SpellParam.Side.OFF && !param.canDisable) {
+                continue;
+            }
+
+            // Calculate button position
+            int btnX = x + 58 + side.offx * 8;
+            int btnY = y + side.offy * 8;
+
+            // Check if this button is hovered
+            boolean hovered = mouseX >= btnX && mouseX < btnX + 8 && mouseY >= btnY && mouseY < btnY + 8;
+
+            // Set color based on whether this side is currently selected
+            if (currentSide == side) {
+                // Highlight with parameter color
+                int r = (param.color >> 16) & 0xFF;
+                int g = (param.color >> 8) & 0xFF;
+                int b = param.color & 0xFF;
+                GL11.glColor4f(r / 255F, g / 255F, b / 255F, 1.0F);
+            } else {
+                GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            }
+
+            // Draw button icon (8x8 from texture at side.u, side.v)
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
+            this.drawTexturedModalRect(btnX, btnY, side.u, side.v, 8, 8);
+
+            // Draw hover effect
+            if (hovered) {
+                drawRect(btnX, btnY, btnX + 8, btnY + 8, 0x4400FF00);
+            }
+        }
+
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    /**
      * Synchronize the current spell to the server.
      * Sends a packet with the spell's NBT data so changes persist.
      */
@@ -516,6 +618,11 @@ public class GuiSpellProgrammer extends GuiScreen {
             return;
         }
 
+        // Handle side config button clicks
+        if (handleSideConfigClick(mouseX, mouseY, button)) {
+            return;
+        }
+
         // Only handle grid clicks if cursor is over grid
         if (cursorX < 0 || cursorY < 0) {
             return;
@@ -543,6 +650,55 @@ public class GuiSpellProgrammer extends GuiScreen {
             openPieceSelection(cursorX, cursorY);
             return;
         }
+    }
+
+    /**
+     * Handle clicks on side configuration buttons.
+     * Returns true if a button was clicked.
+     */
+    private boolean handleSideConfigClick(int mouseX, int mouseY, int button) {
+        if (button != 0) {
+            return false; // Only handle left-clicks
+        }
+
+        if (selectedX < 0 || selectedY < 0) {
+            return false;
+        }
+
+        vazkii.psi.api.spell.SpellPiece piece = editingSpell.grid.gridData[selectedX][selectedY];
+        if (piece == null || piece.params.isEmpty()) {
+            return false;
+        }
+
+        // Check each parameter's buttons
+        int paramIndex = 0;
+        for (String paramName : piece.params.keySet()) {
+            vazkii.psi.api.spell.SpellParam<?> param = piece.params.get(paramName);
+
+            int panelX = guiLeft - 75;
+            int panelY = guiTop + 70 + paramIndex * 26;
+
+            // Check each side button
+            for (vazkii.psi.api.spell.SpellParam.Side side : vazkii.psi.api.spell.SpellParam.Side.values()) {
+                if (side == vazkii.psi.api.spell.SpellParam.Side.OFF && !param.canDisable) {
+                    continue;
+                }
+
+                int btnX = panelX + 58 + side.offx * 8;
+                int btnY = panelY + side.offy * 8;
+
+                if (mouseX >= btnX && mouseX < btnX + 8 && mouseY >= btnY && mouseY < btnY + 8) {
+                    // Button clicked! Set this param to this side
+                    piece.paramSides.put(param, side);
+                    syncSpellToServer();
+                    return true;
+                }
+            }
+
+            paramIndex++;
+        }
+
+        return false;
     }
 
     /**

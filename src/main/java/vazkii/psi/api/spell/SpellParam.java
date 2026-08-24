@@ -132,19 +132,25 @@ public abstract class SpellParam<T> {
      */
     public enum Side {
 
-        OFF(0, 0),
-        TOP(0, -1),
-        BOTTOM(0, 1),
-        LEFT(-1, 0),
-        RIGHT(1, 0);
+        OFF(0, 0, 0, 0, 0, 0, 238, 0),
+        TOP(0, -1, 4, -9, -4, -9, 222, 8),
+        BOTTOM(0, 1, 4, 9, -4, 9, 230, 8),
+        LEFT(-1, 0, -9, 4, -9, -4, 230, 0),
+        RIGHT(1, 0, 9, 4, 9, -4, 222, 0);
 
         public static final Side[] DIRECTIONS = new Side[] { TOP, BOTTOM, LEFT, RIGHT };
 
-        public final int offx, offy;
+        public final int offx, offy, minx, miny, maxx, maxy, u, v;
 
-        Side(int offx, int offy) {
+        Side(int offx, int offy, int minx, int miny, int maxx, int maxy, int u, int v) {
             this.offx = offx;
             this.offy = offy;
+            this.minx = minx;
+            this.miny = miny;
+            this.maxx = maxx;
+            this.maxy = maxy;
+            this.u = u;
+            this.v = v;
         }
 
         public boolean isEnabled() {
