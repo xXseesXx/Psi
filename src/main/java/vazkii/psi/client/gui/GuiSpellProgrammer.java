@@ -135,8 +135,8 @@ public class GuiSpellProgrammer extends GuiScreen {
         // Draw spell pieces on grid (Milestone 4)
         drawSpellPieces();
 
-        // Draw tooltips for hovered pieces
-        if (cursorX >= 0 && cursorY >= 0) {
+        // Draw tooltips for hovered pieces (only when piece selection is NOT open)
+        if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
             vazkii.psi.api.spell.SpellPiece hoveredPiece = editingSpell.grid.gridData[cursorX][cursorY];
             if (hoveredPiece != null) {
                 // Simple tooltip showing piece name from registry key
