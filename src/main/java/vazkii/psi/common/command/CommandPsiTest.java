@@ -18,6 +18,7 @@ import net.minecraft.util.EnumChatFormatting;
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellContext;
 import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.common.spell.operator.PieceOperatorSum;
 import vazkii.psi.common.spell.trick.PieceTrickDebug;
 
 /**
@@ -36,7 +37,7 @@ public class CommandPsiTest extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/psitest debug <message>";
+        return "/psitest <debug|math> <args>";
     }
 
     @Override
@@ -47,7 +48,8 @@ public class CommandPsiTest extends CommandBase {
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
         if (args.length < 1) {
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Usage: /psitest debug <message>"));
+            sender
+                .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Usage: /psitest <debug|math> <args>"));
             return;
         }
 
@@ -55,9 +57,11 @@ public class CommandPsiTest extends CommandBase {
 
         if (subcommand.equalsIgnoreCase("debug")) {
             executeDebugTrick(sender, args);
+        } else if (subcommand.equalsIgnoreCase("math")) {
+            executeMathTest(sender, args);
         } else {
             sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Unknown subcommand: " + subcommand));
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + "Available: debug"));
+            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + "Available: debug, math"));
         }
     }
 
@@ -144,10 +148,103 @@ public class CommandPsiTest extends CommandBase {
         }
     }
 
+    private void executeMathTest(ICommandSender sender, String[] args) {
+        // Must be a player
+        if (!(sender instanceof EntityPlayer)) {
+            sender
+                .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "This command must be run by a player"));
+            return;
+        }
+
+        EntityPlayer player = (EntityPlayer) sender;
+
+        // Parse numbers
+        if (args.length < 3) {
+            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Usage: /psitest math <num1> <num2>"));
+            return;
+        }
+
+        final double value1;
+        final double value2;
+
+        try {
+            value1 = Double.parseDouble(args[1]);
+            value2 = Double.parseDouble(args[2]);
+        } catch (NumberFormatException e) {
+            sender.addChatMessage(
+                new ChatComponentText(EnumChatFormatting.RED + "Invalid numbers. Use format: /psitest math 5 3"));
+            return;
+        }
+
+        try {
+            // Create spell with constants, sum operator, and debug trick
+            Spell spell = new Spell();
+            spell.name = "Math Test";
+
+            // Create context
+            SpellContext context = new SpellContext();
+            context.setPlayer(player);
+            context.setSpell(spell);
+
+            // Create parameter override hack for barebones execution
+            PieceOperatorSum hackSum = new PieceOperatorSum(spell) {
+
+                @Override
+                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
+                    throws SpellRuntimeException {
+                    if (param == this.num1) {
+                        return (T) (Double) value1;
+                    } else if (param == this.num2) {
+                        return (T) (Double) value2;
+                    }
+                    return null;
+                }
+            };
+            hackSum.initParams();
+
+            // Execute sum
+            final Object result = hackSum.execute(context);
+
+            // Create debug trick wrapper to display result
+            PieceTrickDebug hackDebug = new PieceTrickDebug(spell) {
+
+                @Override
+                public <T> T getParamValue(SpellContext context, vazkii.psi.api.spell.SpellParam<T> param)
+                    throws SpellRuntimeException {
+                    if (param == this.target) {
+                        return (T) result;
+                    }
+                    return null;
+                }
+            };
+
+            hackDebug.execute(context);
+
+            // Success feedback
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.GREEN + "[Psi] "
+                        + EnumChatFormatting.RESET
+                        + "Math spell executed successfully"));
+
+        } catch (SpellRuntimeException e) {
+            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
+        } catch (Exception e) {
+            sender.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.RED + "[Psi Error] "
+                        + e.getClass()
+                            .getSimpleName()
+                        + ": "
+                        + e.getMessage()));
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "debug");
+            return getListOfStringsMatchingLastWord(args, "debug", "math");
         }
         return null;
     }
