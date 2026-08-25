@@ -244,21 +244,21 @@ public abstract class SpellPiece {
      * Write this piece to NBT, including its ID, parameter sides, and custom data.
      */
     public void writeToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
-        // Save piece type ID
+        // 1.21.1 uses "key" and short underscore IDs for Psi pieces.
         String id = vazkii.psi.common.spell.SpellPieceRegistry.getID(this);
         if (id != null) {
-            nbt.setString("id", id);
+            nbt.setString("key", id.startsWith("psi:") ? "_" + id.substring(4) : id);
         }
 
-        // Save parameter sides
-        net.minecraft.nbt.NBTTagCompound sidesNbt = new net.minecraft.nbt.NBTTagCompound();
+        net.minecraft.nbt.NBTTagCompound paramsNbt = new net.minecraft.nbt.NBTTagCompound();
         for (Map.Entry<SpellParam<?>, SpellParam.Side> entry : paramSides.entrySet()) {
-            sidesNbt.setString(
-                entry.getKey().name,
-                entry.getValue()
-                    .name());
+            String name = entry.getKey().name;
+            if (name.startsWith(SpellParam.PSI_PREFIX)) {
+                name = "_" + name.substring(SpellParam.PSI_PREFIX.length());
+            }
+            paramsNbt.setInteger(name, entry.getValue().asInt());
         }
-        nbt.setTag("paramSides", sidesNbt);
+        if (!paramSides.isEmpty()) nbt.setTag("params", paramsNbt);
         if (comment != null && !comment.isEmpty()) nbt.setString("comment", comment);
 
         // Save piece-specific data (override in subclasses)
@@ -278,13 +278,14 @@ public abstract class SpellPiece {
      * Returns null if piece ID is not registered.
      */
     public static SpellPiece createFromNBT(Spell spell, net.minecraft.nbt.NBTTagCompound nbt) {
-        String id = nbt.getString("id");
+        String id = nbt.hasKey("key") ? nbt.getString("key") : nbt.getString("id");
         if (id == null || id.isEmpty()) {
             System.err.println("[Psi] Piece NBT missing ID");
             return null;
         }
 
         // Create piece based on ID
+        if (id.startsWith("_")) id = "psi:" + id.substring(1);
         SpellPiece piece = vazkii.psi.common.spell.SpellPieceRegistry.create(id, spell);
         if (piece == null) {
             return null;
@@ -301,8 +302,16 @@ public abstract class SpellPiece {
 
         // Load parameter sides
         net.minecraft.nbt.NBTTagCompound sidesNbt = nbt.getCompoundTag("paramSides");
+        net.minecraft.nbt.NBTTagCompound paramsNbt = nbt.getCompoundTag("params");
         for (SpellParam<?> param : piece.params.values()) {
-            if (sidesNbt.hasKey(param.name)) {
+            String modernName = param.name.startsWith(SpellParam.PSI_PREFIX)
+                ? "_" + param.name.substring(SpellParam.PSI_PREFIX.length()) : param.name;
+            if (paramsNbt.hasKey(modernName)) {
+                int side = paramsNbt.getInteger(modernName);
+                if (side >= 0 && side < SpellParam.Side.values().length) {
+                    piece.setParamSide(param, SpellParam.Side.values()[side]);
+                }
+            } else if (sidesNbt.hasKey(param.name)) {
                 String sideName = sidesNbt.getString(param.name);
                 try {
                     SpellParam.Side side = SpellParam.Side.valueOf(sideName);

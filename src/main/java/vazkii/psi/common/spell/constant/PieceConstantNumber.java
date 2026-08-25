@@ -122,11 +122,22 @@ public class PieceConstantNumber extends SpellPiece {
 
     @Override
     protected void writePieceToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        // 1.21.1 stores the editable number text as a string; retain the old
+        // numeric field as a fallback for spells written by earlier backport builds.
+        nbt.setString("constantValue", Double.toString(constant));
         nbt.setDouble("constant", constant);
     }
 
     @Override
     protected void readPieceFromNBT(net.minecraft.nbt.NBTTagCompound nbt) {
-        constant = nbt.getDouble("constant");
+        if (nbt.hasKey("constantValue")) {
+            try {
+                constant = Double.parseDouble(nbt.getString("constantValue"));
+            } catch (NumberFormatException e) {
+                constant = nbt.getDouble("constantValue");
+            }
+        } else {
+            constant = nbt.getDouble("constant");
+        }
     }
 }
