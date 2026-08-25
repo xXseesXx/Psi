@@ -61,6 +61,10 @@ tile.psi.programmer.name=Spell Programmer
 tile.psi.cad_assembler.name=CAD Assembler
 
 # Spell Pieces
+psimisc.enter_commit=Press Enter to commit
+psimisc.semicolon_line=Use ; to change line
+psimisc.programmer_coords=Selected: [%1$s, %2$s] | Cursor: [%3$s, %4$s]
+psimisc.programmer_coords_no_cursor=Selected: [%1$s, %2$s]
 psimisc.import_from_clipboard=Import from Clipboard
 psimisc.export_to_clipboard=Export to Clipboard
 psimisc.must_hold_shift=(Must be holding SHIFT)

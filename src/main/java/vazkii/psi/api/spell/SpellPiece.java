@@ -259,6 +259,7 @@ public abstract class SpellPiece {
                     .name());
         }
         nbt.setTag("paramSides", sidesNbt);
+        if (comment != null && !comment.isEmpty()) nbt.setString("comment", comment);
 
         // Save piece-specific data (override in subclasses)
         writePieceToNBT(nbt);
@@ -313,6 +314,7 @@ public abstract class SpellPiece {
         }
 
         // Load piece-specific data
+        piece.comment = nbt.hasKey("comment") ? nbt.getString("comment") : null;
         piece.readPieceFromNBT(nbt);
 
         return piece;

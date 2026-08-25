@@ -19,6 +19,8 @@ import vazkii.psi.client.gui.widget.PiecePanelWidget;
 import vazkii.psi.client.gui.widget.SideConfigWidget;
 import vazkii.psi.client.gui.button.GuiButtonHelp;
 import vazkii.psi.client.gui.button.GuiButtonIO;
+import vazkii.psi.client.core.helper.SharingHelper;
+import vazkii.psi.common.lib.LibMisc;
 
 /**
  * 1.7.10 implementation of the modern Psi programmer screen. The historical
@@ -61,6 +63,11 @@ public class GuiProgrammer extends GuiScreen {
     // Search field for piece list
     private net.minecraft.client.gui.GuiTextField searchField;
     private net.minecraft.client.gui.GuiTextField spellNameField;
+    private net.minecraft.client.gui.GuiTextField commentField;
+    private boolean commentEnabled;
+    private final java.util.Deque<Spell> undoSteps = new java.util.ArrayDeque<Spell>();
+    private final java.util.Deque<Spell> redoSteps = new java.util.ArrayDeque<Spell>();
+    private vazkii.psi.api.spell.SpellPiece clipboard;
     private SpellCompilationException compilationError;
 
     private int panelPage;
@@ -104,6 +111,10 @@ public class GuiProgrammer extends GuiScreen {
         spellNameField.setMaxStringLength(20);
         spellNameField.setEnableBackgroundDrawing(false);
         spellNameField.setText(editingSpell.name == null ? "" : editingSpell.name);
+        // Match the modern programmer: the comment editor overlays the centre
+        // of the grid and leaves room below it for the editing instructions.
+        commentField = new net.minecraft.client.gui.GuiTextField(fontRendererObj, guiLeft, guiTop + ySize / 2 - 10, xSize, 20);
+        commentField.setMaxStringLength(500);
         recompileSpell();
 
         // GuiProgrammer's selected coordinates are static and therefore begin
@@ -120,6 +131,7 @@ public class GuiProgrammer extends GuiScreen {
         super.updateScreen();
         searchField.updateCursorCounter();
         spellNameField.updateCursorCounter();
+        if (commentEnabled) commentField.updateCursorCounter();
     }
 
     @Override
@@ -189,23 +201,49 @@ public class GuiProgrammer extends GuiScreen {
         }
 
         drawSelectedPieceLabel();
+        if (commentEnabled) {
+            commentField.drawTextBox();
+            String commit = net.minecraft.client.resources.I18n.format("psimisc.enter_commit");
+            String lineBreak = net.minecraft.client.resources.I18n.format("psimisc.semicolon_line");
+            fontRendererObj.drawStringWithShadow(commit, guiLeft + (xSize - fontRendererObj.getStringWidth(commit)) / 2,
+                commentField.yPosition + 24, 0xFFFFFF);
+            fontRendererObj.drawStringWithShadow(lineBreak, guiLeft + (xSize - fontRendererObj.getStringWidth(lineBreak)) / 2,
+                commentField.yPosition + 34, 0xFFFFFF);
+        }
 
         // Keep config rendering ahead of tooltips.  Tooltip rendering changes
         // GL state in 1.7.10; drawing the panel afterwards was the source of
         // its washed-out appearance while hovering a grid piece.
         sideConfigWidget.render(mouseX, mouseY);
         drawSpellNameField();
+        drawProgrammerFooter();
 
         // Tooltip rendering in 1.7.10 leaves a dark blend state. Render the
         // right-side widgets first, as with the configuration panel.
         drawClipboardButtons(mouseX, mouseY);
 
-        // Draw tooltips for hovered pieces (only when piece selection is NOT open)
-        if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
-            vazkii.psi.api.spell.SpellPiece hoveredPiece = editingSpell.grid.gridData[cursorX][cursorY];
-            if (hoveredPiece != null) {
-                java.util.List<String> tooltip = buildPieceTooltip(hoveredPiece);
-                this.drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
+        // Normal hover shows its piece. Holding Alt substitutes the selected
+        // piece and pins the tooltip to that grid cell, as in 1.21.1.
+        if (!pieceSelectionOpen) {
+            int tooltipX = mouseX;
+            int tooltipY = mouseY;
+            vazkii.psi.api.spell.SpellPiece tooltipPiece = cursorX >= 0 && cursorY >= 0
+                ? editingSpell.grid.gridData[cursorX][cursorY] : null;
+            if (isAltHeld() && selectedX >= 0 && selectedY >= 0) {
+                tooltipPiece = editingSpell.grid.gridData[selectedX][selectedY];
+                tooltipX = gridLeft + selectedX * CELL_SIZE + 10;
+                tooltipY = gridTop + selectedY * CELL_SIZE + 8;
+            }
+            if (tooltipPiece != null) {
+                if (tooltipPiece.comment != null && !tooltipPiece.comment.isEmpty()) {
+                    java.util.List<String> commentLines = new java.util.ArrayList<String>();
+                    for (String line : tooltipPiece.comment.split(";")) commentLines.add(line);
+                    // GuiScreen's tooltip renderer supplies the correct framed
+                    // box; move this one above the regular piece tooltip.
+                    this.drawHoveringText(commentLines, tooltipX, tooltipY - 9 - commentLines.size() * 10,
+                        fontRendererObj);
+                }
+                this.drawHoveringText(buildPieceTooltip(tooltipPiece), tooltipX, tooltipY, fontRendererObj);
             }
         }
 
@@ -227,6 +265,25 @@ public class GuiProgrammer extends GuiScreen {
         fontRendererObj.drawString(net.minecraft.client.resources.I18n.format("psimisc.name"), guiLeft + padLeft,
             spellNameField.yPosition + 1, 0xFFFFFF);
         spellNameField.drawTextBox();
+    }
+
+    /** Status text below the canvas, positioned and coloured like modern Psi. */
+    private void drawProgrammerFooter() {
+        if (selectedX < 0 || selectedY < 0) return;
+        String coords;
+        if (cursorX >= 0 && cursorY >= 0) {
+            coords = net.minecraft.client.resources.I18n.format("psimisc.programmer_coords", selectedX + 1, selectedY + 1,
+                cursorX + 1, cursorY + 1);
+        } else {
+            coords = net.minecraft.client.resources.I18n.format("psimisc.programmer_coords_no_cursor", selectedX + 1,
+                selectedY + 1);
+        }
+        int topY = guiTop - 22;
+        int coordsY = topY + ySize + 24;
+        fontRendererObj.drawString(coords, guiLeft + 4, coordsY, 0x44FFFFFF);
+        String version = "Psi " + LibMisc.VERSION;
+        fontRendererObj.drawStringWithShadow(version, guiLeft + (xSize - fontRendererObj.getStringWidth(version)) / 2,
+            coordsY + fontRendererObj.FONT_HEIGHT + 5, 0x44FFFFFF);
     }
 
     private void recompileSpell() {
@@ -269,6 +326,13 @@ public class GuiProgrammer extends GuiScreen {
         // Draw piece at grid position (icons are already 18x18 with transparent borders)
         PieceTextureAtlas.getInstance()
             .drawPiece(piece.registryKey.toString(), screenX, screenY);
+
+        // The 6x6 speech-bubble marker is the same programmer-atlas sprite
+        // used by modern Psi, positioned slightly beyond the top-left edge.
+        if (piece.comment != null && !piece.comment.isEmpty()) {
+            this.mc.getTextureManager().bindTexture(TEXTURE);
+            this.drawTexturedModalRect(screenX - 2, screenY - 2, 150, 184, 6, 6);
+        }
 
         if (piece instanceof PieceConstantNumber) {
             String value = ((PieceConstantNumber) piece).getDisplayValue();
@@ -327,6 +391,17 @@ public class GuiProgrammer extends GuiScreen {
             return;
         }
 
+        if (commentEnabled) {
+            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                closeComment(true);
+            } else if (keyCode == Keyboard.KEY_ESCAPE) {
+                closeComment(false);
+            } else {
+                commentField.textboxKeyTyped(typedChar, keyCode);
+            }
+            return;
+        }
+
         if (spellNameField.isFocused()) {
             if (keyCode == Keyboard.KEY_TAB) {
                 spellNameField.setFocused(false);
@@ -360,8 +435,8 @@ public class GuiProgrammer extends GuiScreen {
             }
         }
 
-        // ESC key (keyCode 1) closes the GUI or piece selection
-        if (keyCode == 1) {
+        // ESC key closes the GUI or piece selection
+        if (keyCode == Keyboard.KEY_ESCAPE) {
             if (pieceSelectionOpen) {
                 closePieceSelection();
             } else {
@@ -375,16 +450,60 @@ public class GuiProgrammer extends GuiScreen {
 
         if (!pieceSelectionOpen) {
             int param = getHeldParameterIndex();
-            if (keyCode == Keyboard.KEY_UP) {
+            if (keyCode == Keyboard.KEY_DELETE || keyCode == Keyboard.KEY_BACK) {
+                if (isCtrlKeyDown() && isShiftKeyDown()) {
+                    if (!editingSpell.grid.isEmpty()) {
+                        pushState();
+                        editingSpell = new Spell();
+                        spellNameField.setText("");
+                        syncSpellToServer();
+                    }
+                } else if (selectedPiece != null) {
+                    pushState();
+                    editingSpell.grid.gridData[selectedX][selectedY] = null;
+                    syncSpellToServer();
+                }
+                return;
+            } else if (keyCode == Keyboard.KEY_TAB) {
+                spellNameField.setFocused(true);
+                return;
+            } else if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                piecePanelWidget.open(selectedX, selectedY);
+                return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_Z) {
+                undo(); return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_Y) {
+                redo(); return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_C && selectedPiece != null) {
+                clipboard = copyPiece(selectedPiece); return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_X && selectedPiece != null) {
+                clipboard = copyPiece(selectedPiece);
+                pushState(); editingSpell.grid.gridData[selectedX][selectedY] = null; syncSpellToServer(); return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_V && clipboard != null) {
+                vazkii.psi.api.spell.SpellPiece copy = copyPiece(clipboard);
+                if (copy != null) { pushState(); copy.x = selectedX; copy.y = selectedY; copy.isInGrid = true;
+                    editingSpell.grid.gridData[selectedX][selectedY] = copy; syncSpellToServer(); }
+                return;
+            } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_D && selectedPiece != null) {
+                openComment(selectedPiece); return;
+            } else if (isCtrlKeyDown() && isShiftKeyDown() && isAltHeld() && keyCode == Keyboard.KEY_G) {
+                shareSpell(false); return;
+            } else if (isCtrlKeyDown() && isShiftKeyDown() && isAltHeld() && keyCode == Keyboard.KEY_R) {
+                shareSpell(true); return;
+            } else if (keyCode == Keyboard.KEY_UP) {
+                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.TOP); return; }
                 if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.TOP)) return;
                 moveSelection(0, -1);
             } else if (keyCode == Keyboard.KEY_DOWN) {
+                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.BOTTOM); return; }
                 if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.BOTTOM)) return;
                 moveSelection(0, 1);
             } else if (keyCode == Keyboard.KEY_LEFT) {
+                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.LEFT); return; }
                 if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.LEFT)) return;
                 moveSelection(-1, 0);
             } else if (keyCode == Keyboard.KEY_RIGHT) {
+                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.RIGHT); return; }
                 if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.RIGHT)) return;
                 moveSelection(1, 0);
             }
@@ -416,12 +535,94 @@ public class GuiProgrammer extends GuiScreen {
         return Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
     }
 
+    private void pushState() {
+        undoSteps.push(copySpell(editingSpell));
+        redoSteps.clear();
+    }
+
+    private Spell copySpell(Spell spell) {
+        NBTTagCompound tag = new NBTTagCompound();
+        spell.writeToNBT(tag);
+        return Spell.readFromNBT(tag);
+    }
+
+    private vazkii.psi.api.spell.SpellPiece copyPiece(vazkii.psi.api.spell.SpellPiece piece) {
+        NBTTagCompound tag = new NBTTagCompound();
+        piece.writeToNBT(tag);
+        return vazkii.psi.api.spell.SpellPiece.createFromNBT(editingSpell, tag);
+    }
+
+    private void undo() {
+        if (undoSteps.isEmpty()) return;
+        redoSteps.push(copySpell(editingSpell));
+        editingSpell = undoSteps.pop();
+        spellNameField.setText(editingSpell.name == null ? "" : editingSpell.name);
+        syncSpellToServer();
+    }
+
+    private void redo() {
+        if (redoSteps.isEmpty()) return;
+        undoSteps.push(copySpell(editingSpell));
+        editingSpell = redoSteps.pop();
+        spellNameField.setText(editingSpell.name == null ? "" : editingSpell.name);
+        syncSpellToServer();
+    }
+
+    private void shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side side) {
+        if (isShiftKeyDown()) {
+            if (editingSpell.grid.isEmpty()) return;
+            pushState();
+            if (side == vazkii.psi.api.spell.SpellParam.Side.LEFT) editingSpell.grid.rotate(false);
+            else if (side == vazkii.psi.api.spell.SpellParam.Side.RIGHT) editingSpell.grid.rotate(true);
+            else editingSpell.grid.mirrorVertical();
+            syncSpellToServer();
+        } else if (editingSpell.grid.shift(side, false)) {
+            pushState();
+            editingSpell.grid.shift(side, true);
+            syncSpellToServer();
+        }
+    }
+
+    private void openComment(vazkii.psi.api.spell.SpellPiece piece) {
+        commentEnabled = true;
+        commentField.setText(piece.comment == null ? "" : piece.comment);
+        commentField.setFocused(true);
+    }
+
+    private void closeComment(boolean save) {
+        vazkii.psi.api.spell.SpellPiece piece = getSelectedPiece();
+        if (save && piece != null) {
+            pushState();
+            piece.comment = commentField.getText();
+            syncSpellToServer();
+        }
+        commentField.setFocused(false);
+        commentEnabled = false;
+    }
+
+    private void shareSpell(boolean reddit) {
+        try {
+            NBTTagCompound tag = new NBTTagCompound();
+            editingSpell.writeToNBT(tag);
+            String screenshot = SharingHelper.takeScreenshot();
+            if (reddit) SharingHelper.uploadAndShare(editingSpell.name, tag.toString(), screenshot);
+            else SharingHelper.uploadAndOpen(editingSpell.name, tag.toString(), screenshot);
+        } catch (Exception ignored) {
+            // Screenshot capture can fail while the display is being recreated.
+        }
+    }
+
     private boolean onSideButtonKeybind(vazkii.psi.api.spell.SpellPiece piece, int paramIndex,
         vazkii.psi.api.spell.SpellParam.Side side) {
         if (paramIndex < 0 || paramIndex >= piece.params.size()) return false;
         vazkii.psi.api.spell.SpellParam<?> param = new java.util.ArrayList<vazkii.psi.api.spell.SpellParam<?>>(piece.params.values())
             .get(paramIndex);
         if (side == vazkii.psi.api.spell.SpellParam.Side.OFF && !param.canDisable) return false;
+        if (side != vazkii.psi.api.spell.SpellParam.Side.OFF && piece.paramSides.get(param) == side) {
+            if (!param.canDisable) return false;
+            side = vazkii.psi.api.spell.SpellParam.Side.OFF;
+        }
+        pushState();
         piece.paramSides.put(param, side);
         syncSpellToServer();
         return true;

@@ -92,4 +92,58 @@ public class SpellGrid {
         }
         return gridData[xp][yp];
     }
+
+    /** Move every piece one cell, without losing a spell at the grid edge. */
+    public boolean shift(SpellParam.Side side, boolean doit) {
+        int minX = GRID_SIZE, maxX = -1, minY = GRID_SIZE, maxY = -1;
+        for (int x = 0; x < GRID_SIZE; x++) for (int y = 0; y < GRID_SIZE; y++) if (gridData[x][y] != null) {
+            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        }
+        if (maxX < 0 || !exists(minX + side.offx, minY + side.offy)
+            || !exists(maxX + side.offx, maxY + side.offy)) return false;
+        if (!doit) return true;
+        SpellPiece[][] shifted = new SpellPiece[GRID_SIZE][GRID_SIZE];
+        for (int x = 0; x < GRID_SIZE; x++) for (int y = 0; y < GRID_SIZE; y++) {
+            SpellPiece piece = gridData[x][y];
+            if (piece != null) { piece.x = x + side.offx; piece.y = y + side.offy; shifted[piece.x][piece.y] = piece; }
+        }
+        gridData = shifted;
+        return true;
+    }
+
+    public void mirrorVertical() { transform(false, false); }
+    public void rotate(boolean clockwise) { transform(true, clockwise); }
+
+    private void transform(boolean rotate, boolean clockwise) {
+        SpellPiece[][] transformed = new SpellPiece[GRID_SIZE][GRID_SIZE];
+        for (int x = 0; x < GRID_SIZE; x++) for (int y = 0; y < GRID_SIZE; y++) {
+            SpellPiece piece = gridData[x][y];
+            if (piece == null) continue;
+            int nx = rotate ? (clockwise ? GRID_SIZE - 1 - y : y) : x;
+            int ny = rotate ? (clockwise ? x : GRID_SIZE - 1 - x) : GRID_SIZE - 1 - y;
+            piece.x = nx; piece.y = ny;
+            for (SpellParam<?> param : piece.paramSides.keySet()) {
+                SpellParam.Side side = piece.paramSides.get(param);
+                piece.paramSides.put(param, rotate ? rotateSide(side, clockwise) : mirrorSide(side));
+            }
+            transformed[nx][ny] = piece;
+        }
+        gridData = transformed;
+    }
+
+    private SpellParam.Side mirrorSide(SpellParam.Side side) {
+        return side == SpellParam.Side.TOP ? SpellParam.Side.BOTTOM
+            : side == SpellParam.Side.BOTTOM ? SpellParam.Side.TOP : side;
+    }
+
+    private SpellParam.Side rotateSide(SpellParam.Side side, boolean clockwise) {
+        if (side == SpellParam.Side.OFF) return side;
+        if (clockwise) return side == SpellParam.Side.TOP ? SpellParam.Side.RIGHT
+            : side == SpellParam.Side.RIGHT ? SpellParam.Side.BOTTOM
+            : side == SpellParam.Side.BOTTOM ? SpellParam.Side.LEFT : SpellParam.Side.TOP;
+        return side == SpellParam.Side.TOP ? SpellParam.Side.LEFT
+            : side == SpellParam.Side.LEFT ? SpellParam.Side.BOTTOM
+            : side == SpellParam.Side.BOTTOM ? SpellParam.Side.RIGHT : SpellParam.Side.TOP;
+    }
 }
