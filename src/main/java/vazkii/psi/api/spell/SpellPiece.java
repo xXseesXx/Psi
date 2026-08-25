@@ -98,7 +98,7 @@ public abstract class SpellPiece {
     }
 
     /**
-     * The translation key used by the programmer.  Keeping this on the piece,
+     * The translation key used by the programmer. Keeping this on the piece,
      * rather than teaching the GUI about every registered piece, is important
      * for addon pieces to behave exactly like built-in ones.
      */
@@ -128,7 +128,7 @@ public abstract class SpellPiece {
     }
 
     /**
-     * Handles typed programmer input.  {@code doit} permits callers to check
+     * Handles typed programmer input. {@code doit} permits callers to check
      * whether an edit is valid before committing it.
      */
     public boolean onCharTyped(char character, int keyCode, boolean doit) {
@@ -256,7 +256,10 @@ public abstract class SpellPiece {
             if (name.startsWith(SpellParam.PSI_PREFIX)) {
                 name = "_" + name.substring(SpellParam.PSI_PREFIX.length());
             }
-            paramsNbt.setInteger(name, entry.getValue().asInt());
+            paramsNbt.setInteger(
+                name,
+                entry.getValue()
+                    .asInt());
         }
         if (!paramSides.isEmpty()) nbt.setTag("params", paramsNbt);
         if (comment != null && !comment.isEmpty()) nbt.setString("comment", comment);
@@ -305,7 +308,8 @@ public abstract class SpellPiece {
         net.minecraft.nbt.NBTTagCompound paramsNbt = nbt.getCompoundTag("params");
         for (SpellParam<?> param : piece.params.values()) {
             String modernName = param.name.startsWith(SpellParam.PSI_PREFIX)
-                ? "_" + param.name.substring(SpellParam.PSI_PREFIX.length()) : param.name;
+                ? "_" + param.name.substring(SpellParam.PSI_PREFIX.length())
+                : param.name;
             if (paramsNbt.hasKey(modernName)) {
                 int side = paramsNbt.getInteger(modernName);
                 if (side >= 0 && side < SpellParam.Side.values().length) {

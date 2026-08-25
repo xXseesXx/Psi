@@ -13,6 +13,7 @@ import vazkii.psi.api.spell.piece.PieceOperator;
 
 /** Returns an entity's position, using eye position for players like modern Psi. */
 public class PieceOperatorEntityPosition extends PieceOperator {
+
     private SpellParam<Entity> target;
 
     public PieceOperatorEntityPosition(Spell spell) {

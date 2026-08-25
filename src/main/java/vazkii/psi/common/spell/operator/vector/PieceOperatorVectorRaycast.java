@@ -2,7 +2,6 @@ package vazkii.psi.common.spell.operator.vector;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
 
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.Spell;
@@ -15,6 +14,7 @@ import vazkii.psi.api.spell.piece.PieceOperator;
 
 /** Raycasts from an arbitrary origin and direction, matching modern Psi's vector raycast. */
 public class PieceOperatorVectorRaycast extends PieceOperator {
+
     private SpellParam<Vector3> origin;
     private SpellParam<Vector3> ray;
     private SpellParam<Double> max;
@@ -24,12 +24,17 @@ public class PieceOperatorVectorRaycast extends PieceOperator {
     }
 
     public static MovingObjectPosition raycast(Entity entity, double length) {
-        Vector3 origin = Vector3.fromEntity(entity).add(0, entity.getEyeHeight(), 0);
+        Vector3 origin = Vector3.fromEntity(entity)
+            .add(0, entity.getEyeHeight(), 0);
         return raycast(entity, origin, new Vector3(entity.getLookVec()), length);
     }
 
     public static MovingObjectPosition raycast(Entity entity, Vector3 origin, Vector3 ray, double length) {
-        Vector3 end = origin.copy().add(ray.copy().normalize().multiply(length));
+        Vector3 end = origin.copy()
+            .add(
+                ray.copy()
+                    .normalize()
+                    .multiply(length));
         // stopOnLiquid=false matches ClipContext.Fluid.NONE in modern Psi.
         return entity.worldObj.rayTraceBlocks(origin.toVec3(), end.toVec3(), false);
     }

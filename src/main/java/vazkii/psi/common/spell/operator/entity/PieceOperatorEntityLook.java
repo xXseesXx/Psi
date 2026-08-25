@@ -15,6 +15,7 @@ import vazkii.psi.api.spell.piece.PieceOperator;
 
 /** Returns an entity's view vector, or motion vector for projectile-like entities. */
 public class PieceOperatorEntityLook extends PieceOperator {
+
     private SpellParam<Entity> target;
 
     public PieceOperatorEntityLook(Spell spell) {
@@ -32,7 +33,8 @@ public class PieceOperatorEntityLook extends PieceOperator {
         if (entity == null) {
             throw new SpellRuntimeException(SpellRuntimeException.NULL_TARGET);
         }
-        if (entity instanceof IProjectile || entity instanceof EntityThrowable || entity instanceof EntityFallingBlock) {
+        if (entity instanceof IProjectile || entity instanceof EntityThrowable
+            || entity instanceof EntityFallingBlock) {
             return new Vector3(entity.motionX, entity.motionY, entity.motionZ);
         }
         return new Vector3(entity.getLookVec());

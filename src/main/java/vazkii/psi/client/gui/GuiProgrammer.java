@@ -2,25 +2,25 @@ package vazkii.psi.client.gui;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
 
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
-import vazkii.psi.common.item.ItemCAD;
-import vazkii.psi.common.spell.constant.PieceConstantNumber;
-import vazkii.psi.client.gui.widget.PiecePanelWidget;
-import vazkii.psi.client.gui.widget.SideConfigWidget;
+import vazkii.psi.client.core.helper.SharingHelper;
 import vazkii.psi.client.gui.button.GuiButtonHelp;
 import vazkii.psi.client.gui.button.GuiButtonIO;
-import vazkii.psi.client.core.helper.SharingHelper;
+import vazkii.psi.client.gui.widget.PiecePanelWidget;
+import vazkii.psi.client.gui.widget.SideConfigWidget;
+import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.lib.LibMisc;
+import vazkii.psi.common.spell.constant.PieceConstantNumber;
 
 /**
  * 1.7.10 implementation of the modern Psi programmer screen. The historical
@@ -106,19 +106,28 @@ public class GuiProgrammer extends GuiScreen {
         searchField.setVisible(false);
         searchField.setEnableBackgroundDrawing(false);
 
-        spellNameField = new net.minecraft.client.gui.GuiTextField(fontRendererObj, guiLeft + xSize - 130,
-            guiTop + ySize - 14, 120, 10);
+        spellNameField = new net.minecraft.client.gui.GuiTextField(
+            fontRendererObj,
+            guiLeft + xSize - 130,
+            guiTop + ySize - 14,
+            120,
+            10);
         spellNameField.setMaxStringLength(20);
         spellNameField.setEnableBackgroundDrawing(false);
         spellNameField.setText(editingSpell.name == null ? "" : editingSpell.name);
         // Match the modern programmer: the comment editor overlays the centre
         // of the grid and leaves room below it for the editing instructions.
-        commentField = new net.minecraft.client.gui.GuiTextField(fontRendererObj, guiLeft, guiTop + ySize / 2 - 10, xSize, 20);
+        commentField = new net.minecraft.client.gui.GuiTextField(
+            fontRendererObj,
+            guiLeft,
+            guiTop + ySize / 2 - 10,
+            xSize,
+            20);
         commentField.setMaxStringLength(500);
         recompileSpell();
 
         // GuiProgrammer's selected coordinates are static and therefore begin
-        // at (0, 0).  Mirroring that here makes keyboard navigation usable
+        // at (0, 0). Mirroring that here makes keyboard navigation usable
         // before the player has clicked a piece.
         if (selectedX < 0 || selectedY < 0) {
             selectedX = 0;
@@ -153,7 +162,7 @@ public class GuiProgrammer extends GuiScreen {
 
         // Validate cursor is within grid bounds
         // The picker, not the side configuration widget, owns mouse input while
-        // open.  This is what lets the original retain grid hover while config
+        // open. This is what lets the original retain grid hover while config
         // buttons are visible.
         if (pieceSelectionOpen || cursorX > 8
             || cursorY > 8
@@ -187,7 +196,7 @@ public class GuiProgrammer extends GuiScreen {
                 16);
         }
 
-        // Draw hover after selection.  The original uses the left half of the
+        // Draw hover after selection. The original uses the left half of the
         // hover sprite when both markers occupy the same cell, so both remain
         // legible instead of one completely obscuring the other.
         if (!pieceSelectionOpen && cursorX >= 0 && cursorY >= 0) {
@@ -196,8 +205,13 @@ public class GuiProgrammer extends GuiScreen {
                 .bindTexture(TEXTURE);
             // Hover overlay texture at (16, ySize) in programmer.png, size 16x16
             int hoverWidth = cursorX == selectedX && cursorY == selectedY ? 8 : 16;
-            this.drawTexturedModalRect(gridLeft + cursorX * CELL_SIZE, gridTop + cursorY * CELL_SIZE, 16, ySize,
-                hoverWidth, 16);
+            this.drawTexturedModalRect(
+                gridLeft + cursorX * CELL_SIZE,
+                gridTop + cursorY * CELL_SIZE,
+                16,
+                ySize,
+                hoverWidth,
+                16);
         }
 
         drawSelectedPieceLabel();
@@ -205,13 +219,19 @@ public class GuiProgrammer extends GuiScreen {
             commentField.drawTextBox();
             String commit = net.minecraft.client.resources.I18n.format("psimisc.enter_commit");
             String lineBreak = net.minecraft.client.resources.I18n.format("psimisc.semicolon_line");
-            fontRendererObj.drawStringWithShadow(commit, guiLeft + (xSize - fontRendererObj.getStringWidth(commit)) / 2,
-                commentField.yPosition + 24, 0xFFFFFF);
-            fontRendererObj.drawStringWithShadow(lineBreak, guiLeft + (xSize - fontRendererObj.getStringWidth(lineBreak)) / 2,
-                commentField.yPosition + 34, 0xFFFFFF);
+            fontRendererObj.drawStringWithShadow(
+                commit,
+                guiLeft + (xSize - fontRendererObj.getStringWidth(commit)) / 2,
+                commentField.yPosition + 24,
+                0xFFFFFF);
+            fontRendererObj.drawStringWithShadow(
+                lineBreak,
+                guiLeft + (xSize - fontRendererObj.getStringWidth(lineBreak)) / 2,
+                commentField.yPosition + 34,
+                0xFFFFFF);
         }
 
-        // Keep config rendering ahead of tooltips.  Tooltip rendering changes
+        // Keep config rendering ahead of tooltips. Tooltip rendering changes
         // GL state in 1.7.10; drawing the panel afterwards was the source of
         // its washed-out appearance while hovering a grid piece.
         sideConfigWidget.render(mouseX, mouseY);
@@ -228,7 +248,8 @@ public class GuiProgrammer extends GuiScreen {
             int tooltipX = mouseX;
             int tooltipY = mouseY;
             vazkii.psi.api.spell.SpellPiece tooltipPiece = cursorX >= 0 && cursorY >= 0
-                ? editingSpell.grid.gridData[cursorX][cursorY] : null;
+                ? editingSpell.grid.gridData[cursorX][cursorY]
+                : null;
             if (isAltHeld() && selectedX >= 0 && selectedY >= 0) {
                 tooltipPiece = editingSpell.grid.gridData[selectedX][selectedY];
                 tooltipX = gridLeft + selectedX * CELL_SIZE + 10;
@@ -240,7 +261,10 @@ public class GuiProgrammer extends GuiScreen {
                     for (String line : tooltipPiece.comment.split(";")) commentLines.add(line);
                     // GuiScreen's tooltip renderer supplies the correct framed
                     // box; move this one above the regular piece tooltip.
-                    this.drawHoveringText(commentLines, tooltipX, tooltipY - 9 - commentLines.size() * 10,
+                    this.drawHoveringText(
+                        commentLines,
+                        tooltipX,
+                        tooltipY - 9 - commentLines.size() * 10,
                         fontRendererObj);
                 }
                 this.drawHoveringText(buildPieceTooltip(tooltipPiece), tooltipX, tooltipY, fontRendererObj);
@@ -256,14 +280,20 @@ public class GuiProgrammer extends GuiScreen {
 
     private void drawCompilationError() {
         if (compilationError == null || compilationError.x < 0 || compilationError.y < 0) return;
-        fontRendererObj.drawStringWithShadow("!!", gridLeft + compilationError.x * CELL_SIZE + 12,
-            gridTop + compilationError.y * CELL_SIZE + 8, 0xFF0000);
+        fontRendererObj.drawStringWithShadow(
+            "!!",
+            gridLeft + compilationError.x * CELL_SIZE + 12,
+            gridTop + compilationError.y * CELL_SIZE + 8,
+            0xFF0000);
     }
 
     private void drawSpellNameField() {
         GL11.glColor4f(1F, 1F, 1F, 1F);
-        fontRendererObj.drawString(net.minecraft.client.resources.I18n.format("psimisc.name"), guiLeft + padLeft,
-            spellNameField.yPosition + 1, 0xFFFFFF);
+        fontRendererObj.drawString(
+            net.minecraft.client.resources.I18n.format("psimisc.name"),
+            guiLeft + padLeft,
+            spellNameField.yPosition + 1,
+            0xFFFFFF);
         spellNameField.drawTextBox();
     }
 
@@ -272,18 +302,21 @@ public class GuiProgrammer extends GuiScreen {
         if (selectedX < 0 || selectedY < 0) return;
         String coords;
         if (cursorX >= 0 && cursorY >= 0) {
-            coords = net.minecraft.client.resources.I18n.format("psimisc.programmer_coords", selectedX + 1, selectedY + 1,
-                cursorX + 1, cursorY + 1);
+            coords = net.minecraft.client.resources.I18n
+                .format("psimisc.programmer_coords", selectedX + 1, selectedY + 1, cursorX + 1, cursorY + 1);
         } else {
-            coords = net.minecraft.client.resources.I18n.format("psimisc.programmer_coords_no_cursor", selectedX + 1,
-                selectedY + 1);
+            coords = net.minecraft.client.resources.I18n
+                .format("psimisc.programmer_coords_no_cursor", selectedX + 1, selectedY + 1);
         }
         int topY = guiTop - 22;
         int coordsY = topY + ySize + 24;
         fontRendererObj.drawString(coords, guiLeft + 4, coordsY, 0x44FFFFFF);
         String version = "Psi " + LibMisc.VERSION;
-        fontRendererObj.drawStringWithShadow(version, guiLeft + (xSize - fontRendererObj.getStringWidth(version)) / 2,
-            coordsY + fontRendererObj.FONT_HEIGHT + 5, 0x44FFFFFF);
+        fontRendererObj.drawStringWithShadow(
+            version,
+            guiLeft + (xSize - fontRendererObj.getStringWidth(version)) / 2,
+            coordsY + fontRendererObj.FONT_HEIGHT + 5,
+            0x44FFFFFF);
     }
 
     private void recompileSpell() {
@@ -330,7 +363,8 @@ public class GuiProgrammer extends GuiScreen {
         // The 6x6 speech-bubble marker is the same programmer-atlas sprite
         // used by modern Psi, positioned slightly beyond the top-left edge.
         if (piece.comment != null && !piece.comment.isEmpty()) {
-            this.mc.getTextureManager().bindTexture(TEXTURE);
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
             this.drawTexturedModalRect(screenX - 2, screenY - 2, 150, 184, 6, 6);
         }
 
@@ -415,7 +449,8 @@ public class GuiProgrammer extends GuiScreen {
         }
 
         vazkii.psi.api.spell.SpellPiece selectedPiece = getSelectedPiece();
-        if (selectedPiece != null && !selectedPiece.params.isEmpty() && keyCode >= Keyboard.KEY_1
+        if (selectedPiece != null && !selectedPiece.params.isEmpty()
+            && keyCode >= Keyboard.KEY_1
             && keyCode <= Keyboard.KEY_4) {
             int requested = keyCode - Keyboard.KEY_1;
             if (requested < selectedPiece.params.size()) {
@@ -471,40 +506,71 @@ public class GuiProgrammer extends GuiScreen {
                 piecePanelWidget.open(selectedX, selectedY);
                 return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_Z) {
-                undo(); return;
+                undo();
+                return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_Y) {
-                redo(); return;
+                redo();
+                return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_C && selectedPiece != null) {
-                clipboard = copyPiece(selectedPiece); return;
+                clipboard = copyPiece(selectedPiece);
+                return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_X && selectedPiece != null) {
                 clipboard = copyPiece(selectedPiece);
-                pushState(); editingSpell.grid.gridData[selectedX][selectedY] = null; syncSpellToServer(); return;
+                pushState();
+                editingSpell.grid.gridData[selectedX][selectedY] = null;
+                syncSpellToServer();
+                return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_V && clipboard != null) {
                 vazkii.psi.api.spell.SpellPiece copy = copyPiece(clipboard);
-                if (copy != null) { pushState(); copy.x = selectedX; copy.y = selectedY; copy.isInGrid = true;
-                    editingSpell.grid.gridData[selectedX][selectedY] = copy; syncSpellToServer(); }
+                if (copy != null) {
+                    pushState();
+                    copy.x = selectedX;
+                    copy.y = selectedY;
+                    copy.isInGrid = true;
+                    editingSpell.grid.gridData[selectedX][selectedY] = copy;
+                    syncSpellToServer();
+                }
                 return;
             } else if (isCtrlKeyDown() && keyCode == Keyboard.KEY_D && selectedPiece != null) {
-                openComment(selectedPiece); return;
+                openComment(selectedPiece);
+                return;
             } else if (isCtrlKeyDown() && isShiftKeyDown() && isAltHeld() && keyCode == Keyboard.KEY_G) {
-                shareSpell(false); return;
+                shareSpell(false);
+                return;
             } else if (isCtrlKeyDown() && isShiftKeyDown() && isAltHeld() && keyCode == Keyboard.KEY_R) {
-                shareSpell(true); return;
+                shareSpell(true);
+                return;
             } else if (keyCode == Keyboard.KEY_UP) {
-                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.TOP); return; }
-                if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.TOP)) return;
+                if (isCtrlKeyDown()) {
+                    shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.TOP);
+                    return;
+                }
+                if (selectedPiece != null
+                    && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.TOP)) return;
                 moveSelection(0, -1);
             } else if (keyCode == Keyboard.KEY_DOWN) {
-                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.BOTTOM); return; }
-                if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.BOTTOM)) return;
+                if (isCtrlKeyDown()) {
+                    shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.BOTTOM);
+                    return;
+                }
+                if (selectedPiece != null
+                    && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.BOTTOM)) return;
                 moveSelection(0, 1);
             } else if (keyCode == Keyboard.KEY_LEFT) {
-                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.LEFT); return; }
-                if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.LEFT)) return;
+                if (isCtrlKeyDown()) {
+                    shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.LEFT);
+                    return;
+                }
+                if (selectedPiece != null
+                    && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.LEFT)) return;
                 moveSelection(-1, 0);
             } else if (keyCode == Keyboard.KEY_RIGHT) {
-                if (isCtrlKeyDown()) { shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.RIGHT); return; }
-                if (selectedPiece != null && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.RIGHT)) return;
+                if (isCtrlKeyDown()) {
+                    shiftOrTransform(vazkii.psi.api.spell.SpellParam.Side.RIGHT);
+                    return;
+                }
+                if (selectedPiece != null
+                    && onSideButtonKeybind(selectedPiece, param, vazkii.psi.api.spell.SpellParam.Side.RIGHT)) return;
                 moveSelection(1, 0);
             }
         }
@@ -615,8 +681,8 @@ public class GuiProgrammer extends GuiScreen {
     private boolean onSideButtonKeybind(vazkii.psi.api.spell.SpellPiece piece, int paramIndex,
         vazkii.psi.api.spell.SpellParam.Side side) {
         if (paramIndex < 0 || paramIndex >= piece.params.size()) return false;
-        vazkii.psi.api.spell.SpellParam<?> param = new java.util.ArrayList<vazkii.psi.api.spell.SpellParam<?>>(piece.params.values())
-            .get(paramIndex);
+        vazkii.psi.api.spell.SpellParam<?> param = new java.util.ArrayList<vazkii.psi.api.spell.SpellParam<?>>(
+            piece.params.values()).get(paramIndex);
         if (side == vazkii.psi.api.spell.SpellParam.Side.OFF && !param.canDisable) return false;
         if (side != vazkii.psi.api.spell.SpellParam.Side.OFF && piece.paramSides.get(param) == side) {
             if (!param.canDisable) return false;
@@ -632,7 +698,10 @@ public class GuiProgrammer extends GuiScreen {
         vazkii.psi.api.spell.SpellPiece piece = getSelectedPiece();
         if (piece == null || pieceSelectionOpen) return;
         String name = net.minecraft.client.resources.I18n.format(piece.getUnlocalizedName());
-        fontRendererObj.drawStringWithShadow(name, guiLeft + (xSize - fontRendererObj.getStringWidth(name)) / 2, guiTop - 22,
+        fontRendererObj.drawStringWithShadow(
+            name,
+            guiLeft + (xSize - fontRendererObj.getStringWidth(name)) / 2,
+            guiTop - 22,
             0xFFFFFF);
     }
 
@@ -642,8 +711,10 @@ public class GuiProgrammer extends GuiScreen {
         if (isShiftKeyDown()) {
             tooltip.add("\u00a77Parameters:");
             for (vazkii.psi.api.spell.SpellParam<?> param : piece.params.values()) {
-                tooltip.add("\u00a77- " + net.minecraft.client.resources.I18n.format(param.name) + ": "
-                    + param.getRequiredTypeString());
+                tooltip.add(
+                    "\u00a77- " + net.minecraft.client.resources.I18n.format(param.name)
+                        + ": "
+                        + param.getRequiredTypeString());
             }
         }
         if (isCtrlKeyDown()) tooltip.add("\u00a77" + piece.getEvaluationTypeString());
@@ -769,14 +840,15 @@ public class GuiProgrammer extends GuiScreen {
             // Mouse hover uses the exact same sprite as the spell grid, over
             // the icon. The blue keyboard marker above remains behind it.
             if (hovered) {
-                this.mc.getTextureManager().bindTexture(TEXTURE);
+                this.mc.getTextureManager()
+                    .bindTexture(TEXTURE);
                 this.drawTexturedModalRect(btnX, btnY, 16, ySize, 16, 16);
             }
 
             // Store tooltip for rendering last
             if (hovered) {
-                vazkii.psi.api.spell.SpellPiece preview = vazkii.psi.common.spell.SpellPieceRegistry.create(pieceId,
-                    editingSpell);
+                vazkii.psi.api.spell.SpellPiece preview = vazkii.psi.common.spell.SpellPieceRegistry
+                    .create(pieceId, editingSpell);
                 if (preview != null) {
                     java.util.List<String> tooltip = buildPieceTooltip(preview);
                     hoveredPieceTooltip = tooltip;
@@ -793,8 +865,11 @@ public class GuiProgrammer extends GuiScreen {
 
         int pageCount = Math.max(1, (filteredPieces.size() + PIECES_PER_PAGE - 1) / PIECES_PER_PAGE);
         String pageText = (panelPage + 1) + "/" + pageCount;
-        fontRendererObj.drawString(pageText, panelX + (panelWidth - fontRendererObj.getStringWidth(pageText)) / 2,
-            panelY + panelHeight - 12, 0xFFFFFF);
+        fontRendererObj.drawString(
+            pageText,
+            panelX + (panelWidth - fontRendererObj.getStringWidth(pageText)) / 2,
+            panelY + panelHeight - 12,
+            0xFFFFFF);
 
         // Draw tooltip LAST so it renders on top of everything
         if (hoveredPieceTooltip != null) {
@@ -894,11 +969,14 @@ public class GuiProgrammer extends GuiScreen {
     }
 
     private java.util.List<String> getFilteredPieces() {
-        String searchText = searchField.getText().toLowerCase(java.util.Locale.ROOT).trim();
+        String searchText = searchField.getText()
+            .toLowerCase(java.util.Locale.ROOT)
+            .trim();
         java.util.List<String> pieces = new java.util.ArrayList<String>();
         for (String piece : vazkii.psi.common.spell.SpellPieceRegistry.getRegisteredIds()) {
             String name = formatPieceName(piece).toLowerCase(java.util.Locale.ROOT);
-            if (searchText.isEmpty() || piece.toLowerCase(java.util.Locale.ROOT).contains(searchText) || name.contains(searchText)) {
+            if (searchText.isEmpty() || piece.toLowerCase(java.util.Locale.ROOT)
+                .contains(searchText) || name.contains(searchText)) {
                 pieces.add(piece);
             }
         }
@@ -1222,7 +1300,8 @@ public class GuiProgrammer extends GuiScreen {
         // Tooltips in 1.7.10 alter GL colour state. Reset it explicitly because
         // these controls must never inherit a dimmed colour from grid/picker UI.
         GL11.glColor4f(1F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(TEXTURE);
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
         this.drawTexturedModalRect(x, helpY, xSize + (overHelp ? 12 : 0), ySize + 9, 12, 12);
         this.drawTexturedModalRect(x, exportY, overExport ? 186 : 174, 169, 12, 12);
         this.drawTexturedModalRect(x, importY, overImport ? 186 : 174, 181, 12, 12);
@@ -1292,7 +1371,12 @@ public class GuiProgrammer extends GuiScreen {
 
         if (!pieceSelectionOpen) {
             spellNameField.mouseClicked(mouseX, mouseY, button);
-            if (isOver(mouseX, mouseY, spellNameField.xPosition, spellNameField.yPosition, spellNameField.width,
+            if (isOver(
+                mouseX,
+                mouseY,
+                spellNameField.xPosition,
+                spellNameField.yPosition,
+                spellNameField.width,
                 spellNameField.height)) {
                 spellNameField.setFocused(true);
                 return;
