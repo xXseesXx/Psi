@@ -19,6 +19,7 @@ import vazkii.psi.client.gui.button.GuiButtonIO;
 import vazkii.psi.client.gui.widget.PiecePanelWidget;
 import vazkii.psi.client.gui.widget.SideConfigWidget;
 import vazkii.psi.common.item.ItemCAD;
+import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.lib.LibMisc;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
 
@@ -31,6 +32,7 @@ public class GuiProgrammer extends GuiScreen {
     private static final ResourceLocation TEXTURE = new ResourceLocation("psi", "textures/gui/programmer.png");
 
     private final ItemStack cadStack;
+    private final TileProgrammer programmer;
     private Spell editingSpell;
 
     // GUI dimensions (from original Psi)
@@ -81,6 +83,7 @@ public class GuiProgrammer extends GuiScreen {
 
     public GuiProgrammer(ItemStack cadStack) {
         this.cadStack = cadStack;
+        this.programmer = null;
 
         // Load spell from CAD if it has one
         this.editingSpell = ItemCAD.getSpell(cadStack);
@@ -88,6 +91,13 @@ public class GuiProgrammer extends GuiScreen {
             // Create empty spell if CAD has no spell
             this.editingSpell = new Spell();
         }
+    }
+
+    /** Opens the existing editor against a world-owned programmer spell. */
+    public GuiProgrammer(TileProgrammer programmer) {
+        this.cadStack = null;
+        this.programmer = programmer;
+        this.editingSpell = programmer.spell == null ? new Spell() : programmer.spell;
     }
 
     @Override
@@ -716,9 +726,22 @@ public class GuiProgrammer extends GuiScreen {
                         + ": "
                         + param.getRequiredTypeString());
             }
+        } else {
+            tooltip.add("\u00a77Hold \u00a7bSHIFT\u00a77 for more info");
         }
-        if (isCtrlKeyDown()) tooltip.add("\u00a77" + piece.getEvaluationTypeString());
+        if (isCtrlKeyDown()) {
+            tooltip.add("\u00a77" + piece.getEvaluationTypeString());
+        } else {
+            tooltip.add("\u00a77Hold \u00a7bCTRL\u00a77 for piece stats");
+        }
         return tooltip;
+    }
+
+    private String colorModifierKeys(String text) {
+        return text.replace("SHIFT", "\u00a7bSHIFT\u00a77")
+            .replace("Shift", "\u00a7bShift\u00a77")
+            .replace("CTRL", "\u00a7bCTRL\u00a77")
+            .replace("Ctrl", "\u00a7bCtrl\u00a77");
     }
 
     /**
@@ -1246,14 +1269,19 @@ public class GuiProgrammer extends GuiScreen {
      * Sends a packet with the spell's NBT data so changes persist.
      */
     private void syncSpellToServer() {
-        if (editingSpell != null && cadStack != null) {
+        if (editingSpell != null && (cadStack != null || programmer != null)) {
             recompileSpell();
             NBTTagCompound spellNBT = new NBTTagCompound();
             editingSpell.writeToNBT(spellNBT);
 
             // Send packet to server
-            vazkii.psi.common.network.PacketHandler.INSTANCE
-                .sendToServer(new vazkii.psi.common.network.PacketSpellUpdate(editingSpell));
+            if (programmer != null) {
+                programmer.setSpell(editingSpell);
+                vazkii.psi.common.network.PacketHandler.INSTANCE.sendToServer(
+                    new vazkii.psi.common.network.PacketProgrammerSpellUpdate(programmer.xCoord, programmer.yCoord, programmer.zCoord, editingSpell));
+            } else {
+                vazkii.psi.common.network.PacketHandler.INSTANCE.sendToServer(new vazkii.psi.common.network.PacketSpellUpdate(editingSpell));
+            }
 
             System.out.println("[Psi] Synced spell '" + editingSpell.name + "' to server");
         }
@@ -1313,16 +1341,16 @@ public class GuiProgrammer extends GuiScreen {
                 for (int i = 0; i <= 22; i++) {
                     String key = "psi.programmer_reference" + i;
                     String line = net.minecraft.client.resources.I18n.format(key, "Ctrl");
-                    if (!line.equals(key)) tooltip.add(line);
+                    if (!line.equals(key)) tooltip.add(colorModifierKeys(line));
                 }
             } else {
-                tooltip.add("\u00a77Hold SHIFT for more info");
+                tooltip.add("\u00a77Hold \u00a7bSHIFT\u00a77 for more info");
             }
             this.drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
         } else if (overExport || overImport) {
             java.util.List<String> tooltip = new java.util.ArrayList<String>();
             tooltip.add(overExport ? "\u00a7cExport to Clipboard" : "\u00a79Import from Clipboard");
-            tooltip.add("\u00a77(Must be holding SHIFT)");
+            tooltip.add("\u00a77(Must be holding \u00a7bSHIFT\u00a77)");
             this.drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
         }
     }

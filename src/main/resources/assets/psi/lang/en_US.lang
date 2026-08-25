@@ -59,6 +59,10 @@ item.psi.cad.name=Casting Assistant Device
 # Blocks
 tile.psi.programmer.name=Spell Programmer
 tile.psi.cad_assembler.name=CAD Assembler
+item.psi.spell_bullet.name=Spell Bullet
+item.psi.cad_creative.name=Creative CAD
+key.psi.master=Psi Master
+key.categories.psi=Psi
 
 # Spell Pieces
 psimisc.enter_commit=Press Enter to commit

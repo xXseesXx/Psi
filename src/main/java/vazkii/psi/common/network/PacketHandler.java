@@ -22,5 +22,7 @@ public class PacketHandler {
         // Register spell update packet (client -> server)
         // Packet ID 0: Spell update from GUI to server
         INSTANCE.registerMessage(PacketSpellUpdate.Handler.class, PacketSpellUpdate.class, 0, Side.SERVER);
+        INSTANCE.registerMessage(PacketProgrammerSpellUpdate.Handler.class, PacketProgrammerSpellUpdate.class, 1, Side.SERVER);
+        INSTANCE.registerMessage(PacketCADSelect.Handler.class, PacketCADSelect.class, 2, Side.SERVER);
     }
 }

@@ -118,8 +118,6 @@ public abstract class SpellPiece {
         if (!description.equals(getUnlocalizedDesc())) {
             tooltip.add("\u00a77" + description);
         }
-        tooltip.add("\u00a78Hold Shift for parameters");
-        tooltip.add("\u00a78Hold Ctrl for statistics");
     }
 
     /** Whether this piece consumes programmer key input while selected. */
