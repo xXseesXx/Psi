@@ -11,6 +11,9 @@ import vazkii.psi.api.spell.SpellPiece;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
 import vazkii.psi.common.spell.constant.PieceConstantString;
 import vazkii.psi.common.spell.operator.PieceOperatorSum;
+import vazkii.psi.common.spell.operator.entity.PieceOperatorEntityLook;
+import vazkii.psi.common.spell.operator.entity.PieceOperatorEntityPosition;
+import vazkii.psi.common.spell.operator.vector.PieceOperatorVectorRaycast;
 import vazkii.psi.common.spell.selector.PieceSelectorCaster;
 import vazkii.psi.common.spell.selector.PieceSelectorEntityPosition;
 import vazkii.psi.common.spell.selector.PieceSelectorRaycast;
@@ -109,6 +112,9 @@ public class SpellPieceRegistry {
 
         // Operators
         register("psi:operator_sum", PieceOperatorSum::new);
+        register("psi:operator_entity_position", PieceOperatorEntityPosition::new);
+        register("psi:operator_entity_look", PieceOperatorEntityLook::new);
+        register("psi:operator_vector_raycast", PieceOperatorVectorRaycast::new);
 
         // Selectors
         register("psi:selector_caster", PieceSelectorCaster::new);
