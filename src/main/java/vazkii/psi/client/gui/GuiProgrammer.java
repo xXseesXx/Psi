@@ -11,14 +11,18 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.CompiledSpell;
+import vazkii.psi.api.spell.EnumSpellStat;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
+import vazkii.psi.api.spell.piece.PieceTrick;
 import vazkii.psi.client.core.helper.SharingHelper;
 import vazkii.psi.client.gui.button.GuiButtonHelp;
 import vazkii.psi.client.gui.button.GuiButtonIO;
 import vazkii.psi.client.gui.widget.PiecePanelWidget;
 import vazkii.psi.client.gui.widget.SideConfigWidget;
 import vazkii.psi.common.item.ItemCAD;
+import vazkii.psi.common.item.ItemCreativeCAD;
 import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.lib.LibMisc;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
@@ -71,6 +75,8 @@ public class GuiProgrammer extends GuiScreen {
     private final java.util.Deque<Spell> redoSteps = new java.util.ArrayDeque<Spell>();
     private vazkii.psi.api.spell.SpellPiece clipboard;
     private SpellCompilationException compilationError;
+    private CompiledSpell compiledSpell;
+    private final java.util.List<String> programmerTooltip = new java.util.ArrayList<String>();
 
     private int panelPage;
     private int panelCursor;
@@ -165,6 +171,9 @@ public class GuiProgrammer extends GuiScreen {
         this.mc.getTextureManager()
             .bindTexture(TEXTURE);
         this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
+        programmerTooltip.clear();
+        drawProgrammerStatus(mouseX, mouseY);
+        drawSpellCosts(mouseX, mouseY);
 
         // Calculate cursor position based on mouse
         cursorX = (mouseX - gridLeft) / CELL_SIZE;
@@ -283,6 +292,10 @@ public class GuiProgrammer extends GuiScreen {
 
         super.drawScreen(mouseX, mouseY, partialTicks);
 
+        if (!programmerTooltip.isEmpty() && !pieceSelectionOpen) {
+            this.drawHoveringText(programmerTooltip, mouseX, mouseY, fontRendererObj);
+        }
+
         // Draw piece selection overlay LAST (on top of everything)
         piecePanelWidget.render(mouseX, mouseY);
 
@@ -295,6 +308,83 @@ public class GuiProgrammer extends GuiScreen {
             gridLeft + compilationError.x * CELL_SIZE + 12,
             gridTop + compilationError.y * CELL_SIZE + 8,
             0xFF0000);
+    }
+
+    /** Draws the compiler status and the player's active Casting Assistant Device. */
+    private void drawProgrammerStatus(int mouseX, int mouseY) {
+        GL11.glColor4f(1F, 1F, 1F, 1F);
+        this.mc.getTextureManager().bindTexture(TEXTURE);
+        this.drawTexturedModalRect(guiLeft - 48, guiTop + 5, xSize, 0, 48, 30);
+
+        int statusX = guiLeft - 16;
+        int statusY = guiTop + 13;
+        this.drawTexturedModalRect(statusX, statusY, compilationError == null ? 0 : 12, ySize + 28, 12, 12);
+        if (mouseX >= statusX && mouseX < statusX + 12 && mouseY >= statusY && mouseY < statusY + 12) {
+            if (compilationError == null) {
+                programmerTooltip.add("\u00a7a" + net.minecraft.client.resources.I18n.format("psimisc.compiled"));
+            } else {
+                programmerTooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("psimisc.errored"));
+                programmerTooltip.add("\u00a77" + net.minecraft.client.resources.I18n.format(compilationError.getMessage()));
+                if (compilationError.x >= 0 && compilationError.y >= 0) {
+                    programmerTooltip.add("\u00a77[" + (compilationError.x + 1) + ", " + (compilationError.y + 1) + "]");
+                }
+            }
+        }
+
+        ItemStack cad = getCastingAssistant();
+        if (cad != null) {
+            int cadX = guiLeft - 42;
+            int cadY = guiTop + 12;
+            itemRender.renderItemAndEffectIntoGUI(fontRendererObj, this.mc.getTextureManager(), cad, cadX, cadY);
+            if (mouseX >= cadX && mouseX < cadX + 16 && mouseY >= cadY && mouseY < cadY + 16) {
+                programmerTooltip.addAll(cad.getTooltip(this.mc.thePlayer, false));
+            }
+        }
+    }
+
+    /** Draws modern Psi's spell-stat readout, using the assembled CAD's limits. */
+    private void drawSpellCosts(int mouseX, int mouseY) {
+        if (compiledSpell == null) return;
+        ItemStack cad = getCastingAssistant();
+        int statX = guiLeft + xSize + 3;
+        int i = 0;
+        for (EnumSpellStat stat : EnumSpellStat.values()) {
+            int statY = guiTop + 20 + i * 20;
+            int value = compiledSpell.metadata.getStat(stat);
+            String limitName = cadStatName(stat);
+            // No equipped CAD means no capacity; the creative CAD intentionally
+            // reports an unlimited capacity, just like the modern UI.
+            int limit = limitName == null ? -1 : cad == null ? 0
+                : cad.getItem() instanceof ItemCreativeCAD ? -1 : ItemCAD.getStat(cad, limitName);
+            String text = stat == EnumSpellStat.COST ? String.valueOf(value) : value + "/" + (limit < 0 ? "\u221e" : limit);
+            int colour = limitName != null && limit >= 0 && value > limit ? 0xFF6666 : 0xFFFFFF;
+
+            GL11.glColor4f(1F, 1F, 1F, 1F);
+            this.mc.getTextureManager().bindTexture(TEXTURE);
+            this.drawTexturedModalRect(statX, statY, (stat.ordinal() + 1) * 12, ySize + 16, 12, 12);
+            fontRendererObj.drawString(text, statX + 16, statY + 2, colour);
+            if (mouseX >= statX && mouseX < statX + 12 && mouseY >= statY && mouseY < statY + 12) {
+                programmerTooltip.add("\u00a7b" + net.minecraft.client.resources.I18n.format(stat.getName()));
+                programmerTooltip.add("\u00a77" + net.minecraft.client.resources.I18n.format(stat.getDesc()));
+            }
+            i++;
+        }
+    }
+
+    private ItemStack getCastingAssistant() {
+        if (cadStack != null && (cadStack.getItem() instanceof ItemCAD || cadStack.getItem() instanceof ItemCreativeCAD)) return cadStack;
+        ItemStack held = this.mc.thePlayer == null ? null : this.mc.thePlayer.getHeldItem();
+        return held != null && (held.getItem() instanceof ItemCAD || held.getItem() instanceof ItemCreativeCAD) ? held : null;
+    }
+
+    private String cadStatName(EnumSpellStat stat) {
+        switch (stat) {
+            case COMPLEXITY: return "Complexity";
+            case POTENCY: return "Potency";
+            case PROJECTION: return "Projection";
+            case BANDWIDTH: return "Bandwidth";
+            default: return null;
+        }
     }
 
     private void drawSpellNameField() {
@@ -331,9 +421,10 @@ public class GuiProgrammer extends GuiScreen {
 
     private void recompileSpell() {
         try {
-            new SpellCompiler().compile(editingSpell);
+            compiledSpell = new SpellCompiler().compile(editingSpell);
             compilationError = null;
         } catch (SpellCompilationException error) {
+            compiledSpell = null;
             compilationError = error;
         }
     }
@@ -979,6 +1070,16 @@ public class GuiProgrammer extends GuiScreen {
 
                 // Place on grid
                 editingSpell.grid.gridData[gridX][gridY] = newPiece;
+                newPiece.isInGrid = true;
+
+                // A first trick is a natural, useful name for a new spell. Never
+                // replace a player-entered name, including one restored by undo.
+                if (newPiece instanceof PieceTrick && (editingSpell.name == null || editingSpell.name.trim().isEmpty())) {
+                    String generatedName = net.minecraft.client.resources.I18n.format(newPiece.getUnlocalizedName())
+                        .replaceFirst("^Trick:\\s*", "");
+                    editingSpell.name = generatedName.length() > 20 ? generatedName.substring(0, 20) : generatedName;
+                    spellNameField.setText(editingSpell.name);
+                }
 
                 // Sync to server immediately
                 syncSpellToServer();

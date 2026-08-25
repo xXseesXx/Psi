@@ -10,6 +10,7 @@ import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.opengl.GL11;
 import vazkii.psi.client.core.handler.KeybindHandler;
 import vazkii.psi.common.item.ItemCreativeCAD;
+import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.network.PacketCADSelect;
 import vazkii.psi.common.network.PacketHandler;
 
@@ -23,7 +24,8 @@ public class GuiCADSelect extends GuiScreen {
     public GuiCADSelect(ItemStack cad) { this.cad = cad; }
 
     @Override public void drawScreen(int mx, int my, float partial) {
-        int x = width / 2, y = height / 2, maxRadius = 80, segments = ItemCreativeCAD.MAGAZINE_SIZE;
+        int x = width / 2, y = height / 2, maxRadius = 80, segments = magazineSize();
+        if (segments <= 0) return;
         double angle = (Math.atan2(my - y, mx - x) + Math.PI * 2) % (Math.PI * 2);
         float step = (float) Math.PI / 180F, degPer = (float) Math.PI * 2F / segments;
         slotSelected = -1;
@@ -43,20 +45,23 @@ public class GuiCADSelect extends GuiScreen {
         for (int seg = 0; seg < segments; seg++) {
             boolean hover = degPer * seg < angle && angle < degPer * (seg + 1);
             float radius = Math.max(0, Math.min((timeIn + partial - seg * 6F / segments) * 40F, maxRadius));
-            if (hover || seg == ItemCreativeCAD.getSelectedSlot(cad)) radius *= 1.025F;
+            if (hover || seg == selectedSlot()) radius *= 1.025F;
             float rad = (seg + .5F) * degPer, xp = x + MathHelper.cos(rad) * radius, yp = y + MathHelper.sin(rad) * radius;
-            ItemStack bullet = ItemCreativeCAD.getBullet(cad, seg);
+            ItemStack bullet = bullet(seg);
             if (bullet == null) continue;
             itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), bullet, (int) ((xp - x) * .6 + x) - 8, (int) ((yp - y) * .6 + y) - 8);
             String name = (hover ? EnumChatFormatting.UNDERLINE.toString() : "") + bullet.getDisplayName(); int tw = fontRendererObj.getStringWidth(name);
             float tx = xp - 4, ty = yp; if (tx < x) tx -= tw - 8; if (ty < y) ty -= 9;
             fontRendererObj.drawStringWithShadow(name, (int) tx, (int) ty, 0xFFFFFF);
-            if (seg == ItemCreativeCAD.getSelectedSlot(cad)) fontRendererObj.drawStringWithShadow("Selected", (int) (tx + tw / 4F), (int) (ty + 9), 0x00FF00);
+            if (seg == selectedSlot()) fontRendererObj.drawStringWithShadow("Selected", (int) (tx + tw / 4F), (int) (ty + 9), 0x00FF00);
             mc.getTextureManager().bindTexture(SIGNS[seg]); drawTexturedModalRect((int) ((xp - x) * .8 + x) - 8, (int) ((yp - y) * .8 + y) - 8, 0, 0, 16, 16);
         }
         float scale = 3 * Math.min(5, timeIn + partial) / 5F;
         GL11.glPushMatrix(); GL11.glScalef(scale, scale, scale); itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), cad, (int) (x / scale) - 8, (int) (y / scale) - 8); GL11.glPopMatrix(); GL11.glEnable(GL11.GL_DEPTH_TEST);
     }
-    @Override public void updateScreen() { if (!GameSettings.isKeyDown(KeybindHandler.PSI_MASTER)) { mc.displayGuiScreen(null); if (slotSelected != -1) { ItemCreativeCAD.setSelectedSlot(cad, slotSelected); PacketHandler.INSTANCE.sendToServer(new PacketCADSelect(slotSelected)); } } timeIn++; }
+    private int magazineSize() { return cad.getItem() instanceof ItemCreativeCAD ? ItemCreativeCAD.MAGAZINE_SIZE : ItemCAD.getMagazineSize(cad); }
+    private int selectedSlot() { return cad.getItem() instanceof ItemCreativeCAD ? ItemCreativeCAD.getSelectedSlot(cad) : ItemCAD.getSelectedSlot(cad); }
+    private ItemStack bullet(int slot) { return cad.getItem() instanceof ItemCreativeCAD ? ItemCreativeCAD.getBullet(cad, slot) : ItemCAD.getBullet(cad, slot); }
+    @Override public void updateScreen() { if (!GameSettings.isKeyDown(KeybindHandler.PSI_MASTER)) { mc.displayGuiScreen(null); if (slotSelected != -1) { if (cad.getItem() instanceof ItemCreativeCAD) ItemCreativeCAD.setSelectedSlot(cad, slotSelected); else ItemCAD.setSelectedSlot(cad, slotSelected); PacketHandler.INSTANCE.sendToServer(new PacketCADSelect(slotSelected)); } } timeIn++; }
     @Override public boolean doesGuiPauseGame() { return false; }
 }

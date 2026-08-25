@@ -11,11 +11,14 @@ import vazkii.psi.common.core.proxy.CommonProxy;
 import cpw.mods.fml.common.FMLCommonHandler;
 import vazkii.psi.client.core.handler.KeybindHandler;
 import vazkii.psi.client.render.BlockMachineRenderer;
+import vazkii.psi.client.render.RenderItemCAD;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import vazkii.psi.client.render.tile.RenderTileProgrammer;
 import vazkii.psi.common.block.tile.TileProgrammer;
+import vazkii.psi.common.core.proxy.CommonProxy;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.client.MinecraftForgeClient;
 
 public class ClientProxy extends CommonProxy {
 
@@ -26,6 +29,7 @@ public class ClientProxy extends CommonProxy {
         machineRenderType = RenderingRegistry.getNextAvailableRenderId();
         RenderingRegistry.registerBlockHandler(new BlockMachineRenderer(machineRenderType));
         ClientRegistry.bindTileEntitySpecialRenderer(TileProgrammer.class, new RenderTileProgrammer());
+        MinecraftForgeClient.registerItemRenderer(CommonProxy.itemCAD, new RenderItemCAD());
         KeybindHandler handler=new KeybindHandler(); KeybindHandler.init(); FMLCommonHandler.instance().bus().register(handler);
     }
 

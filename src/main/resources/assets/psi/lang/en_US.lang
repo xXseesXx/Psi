@@ -3,6 +3,10 @@
 # Misc
 psimisc.config=Config
 psimisc.name=Name
+psimisc.compiled=Compiled
+psimisc.errored=Compilation Error
+itemGroup.psi=Psi
+psimisc.shift_for_info=Hold SHIFT for more info
 
 # Spell Parameters
 psi.spellparam.target=Target
@@ -55,6 +59,25 @@ psi.spellparam.root=Root
 
 # Items
 item.psi.cad.name=Casting Assistant Device
+item.psi.cad_assembly_iron.name=Iron CAD Assembly
+item.psi.cad_assembly_gold.name=Gold CAD Assembly
+item.psi.cad_assembly_psimetal.name=Psimetal CAD Assembly
+item.psi.cad_assembly_ebony_psimetal.name=Ebony Psimetal CAD Assembly
+item.psi.cad_assembly_ivory_psimetal.name=Ivory Psimetal CAD Assembly
+item.psi.cad_assembly_creative.name=Creative CAD Assembly
+item.psi.cad_core_basic.name=Basic CAD Core
+item.psi.cad_core_overclocked.name=Overclocked CAD Core
+item.psi.cad_core_conductive.name=Conductive CAD Core
+item.psi.cad_core_hyperclocked.name=Hyperclocked CAD Core
+item.psi.cad_core_radiative.name=Radiative CAD Core
+item.psi.cad_socket_basic.name=Basic CAD Socket
+item.psi.cad_socket_signaling.name=Signaling CAD Socket
+item.psi.cad_socket_large.name=Large CAD Socket
+item.psi.cad_socket_transmissive.name=Transmissive CAD Socket
+item.psi.cad_socket_huge.name=Huge CAD Socket
+item.psi.cad_battery_basic.name=Basic CAD Battery
+item.psi.cad_battery_extended.name=Extended CAD Battery
+item.psi.cad_battery_ultradense.name=Ultradense CAD Battery
 
 # Blocks
 tile.psi.programmer.name=Spell Programmer
@@ -121,3 +144,15 @@ psi.spellpiece.trick_break_block=Trick: Break Block
 psi.spellpiece.trick_break_block.desc=Breaks the targeted block.
 psi.spellpiece.trick_explode=Trick: Explode
 psi.spellpiece.trick_explode.desc=Creates an explosion at the target position.
+
+# Spell statistics
+psi.spellstat.complexity=Complexity
+psi.spellstat.complexity.desc=The number of pieces used by this spell.
+psi.spellstat.potency=Potency
+psi.spellstat.potency.desc=The spell's total effect strength.
+psi.spellstat.cost=Cost
+psi.spellstat.cost.desc=The Psi energy consumed when casting.
+psi.spellstat.projection=Projection
+psi.spellstat.projection.desc=The number of projected spell effects.
+psi.spellstat.bandwidth=Bandwidth
+psi.spellstat.bandwidth.desc=The spell's data throughput requirement.
