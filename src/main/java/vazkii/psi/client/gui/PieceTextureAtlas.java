@@ -21,68 +21,23 @@ public class PieceTextureAtlas {
 
     private static PieceTextureAtlas INSTANCE;
 
+    private final BufferedImage atlasImage;
     private final DynamicTexture atlasTexture;
     private final ResourceLocation atlasLocation;
     private final Map<String, UVCoords> uvMap = new HashMap<>();
+    private int nextX;
+    private int nextY;
+    private int rowHeight;
 
     private static final int ICON_SIZE = 18; // Icons are 18x18 with transparent borders
     private static final int ATLAS_WIDTH = 256;
     private static final int ATLAS_HEIGHT = 256;
 
-    // All piece textures we need to stitch
-    private static final String[] PIECE_NAMES = { "constant_number", "constant_string", "operator_sum",
-        "selector_caster", "selector_raycast", "selector_entity_position", "trick_debug", "trick_break_block",
-        "trick_explode" };
-
     private PieceTextureAtlas() {
-        // Create a blank atlas texture
-        BufferedImage atlasImage = new BufferedImage(ATLAS_WIDTH, ATLAS_HEIGHT, BufferedImage.TYPE_INT_ARGB);
-
-        // Stitch all piece textures into the atlas
-        int x = 0;
-        int y = 0;
-        int maxRowHeight = 0;
-
-        for (String pieceName : PIECE_NAMES) {
-            try {
-                // Load the piece texture
-                ResourceLocation pieceRes = new ResourceLocation("psi", "textures/spell/" + pieceName + ".png");
-                BufferedImage pieceImage = ImageIO.read(
-                    Minecraft.getMinecraft()
-                        .getResourceManager()
-                        .getResource(pieceRes)
-                        .getInputStream());
-
-                // Check if we need to move to next row
-                if (x + pieceImage.getWidth() > ATLAS_WIDTH) {
-                    x = 0;
-                    y += maxRowHeight;
-                    maxRowHeight = 0;
-                }
-
-                // Copy piece image into atlas
-                atlasImage.getGraphics()
-                    .drawImage(pieceImage, x, y, null);
-
-                // Store UV coordinates (normalized 0-1)
-                float u0 = (float) x / ATLAS_WIDTH;
-                float v0 = (float) y / ATLAS_HEIGHT;
-                float u1 = (float) (x + pieceImage.getWidth()) / ATLAS_WIDTH;
-                float v1 = (float) (y + pieceImage.getHeight()) / ATLAS_HEIGHT;
-
-                uvMap.put(
-                    "psi:" + pieceName,
-                    new UVCoords(u0, v0, u1, v1, x, y, pieceImage.getWidth(), pieceImage.getHeight()));
-
-                // Move to next position
-                x += pieceImage.getWidth();
-                maxRowHeight = Math.max(maxRowHeight, pieceImage.getHeight());
-
-            } catch (IOException e) {
-                System.err.println("[Psi] Failed to load piece texture: " + pieceName);
-                e.printStackTrace();
-            }
-        }
+        // Icons are loaded when their registered piece is first drawn.  Keeping
+        // this dynamic is essential: the programmer registry can contain pieces
+        // added after this class was written, including addon pieces.
+        atlasImage = new BufferedImage(ATLAS_WIDTH, ATLAS_HEIGHT, BufferedImage.TYPE_INT_ARGB);
 
         // Upload atlas to GPU
         atlasTexture = new DynamicTexture(atlasImage);
@@ -90,7 +45,7 @@ public class PieceTextureAtlas {
             .getTextureManager()
             .getDynamicTextureLocation("psi_piece_atlas", atlasTexture);
 
-        System.out.println("[Psi] Piece texture atlas created with " + uvMap.size() + " pieces");
+        System.out.println("[Psi] Piece texture atlas created");
     }
 
     public static PieceTextureAtlas getInstance() {
@@ -113,14 +68,56 @@ public class PieceTextureAtlas {
      * Get UV coordinates for a piece.
      */
     public UVCoords getUV(String pieceId) {
+        ensureIcon(pieceId);
         return uvMap.get(pieceId);
+    }
+
+    /** Loads a registered piece texture into the dynamic atlas on first use. */
+    private void ensureIcon(String pieceId) {
+        if (uvMap.containsKey(pieceId)) {
+            return;
+        }
+        try {
+            ResourceLocation key = new ResourceLocation(pieceId);
+            ResourceLocation texture = new ResourceLocation(key.getResourceDomain(),
+                "textures/spell/" + key.getResourcePath() + ".png");
+            BufferedImage icon = ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(texture)
+                .getInputStream());
+            if (icon == null) {
+                return;
+            }
+            if (nextX + icon.getWidth() > ATLAS_WIDTH) {
+                nextX = 0;
+                nextY += rowHeight;
+                rowHeight = 0;
+            }
+            if (nextY + icon.getHeight() > ATLAS_HEIGHT) {
+                System.err.println("[Psi] Piece texture atlas is full: " + pieceId);
+                return;
+            }
+
+            java.awt.Graphics graphics = atlasImage.getGraphics();
+            graphics.drawImage(icon, nextX, nextY, null);
+            graphics.dispose();
+
+            float u0 = (float) nextX / ATLAS_WIDTH;
+            float v0 = (float) nextY / ATLAS_HEIGHT;
+            float u1 = (float) (nextX + icon.getWidth()) / ATLAS_WIDTH;
+            float v1 = (float) (nextY + icon.getHeight()) / ATLAS_HEIGHT;
+            uvMap.put(pieceId, new UVCoords(u0, v0, u1, v1, nextX, nextY, icon.getWidth(), icon.getHeight()));
+            nextX += icon.getWidth();
+            rowHeight = Math.max(rowHeight, icon.getHeight());
+            atlasTexture.updateDynamicTexture();
+        } catch (IOException e) {
+            System.err.println("[Psi] Failed to load piece texture: " + pieceId);
+        }
     }
 
     /**
      * Draw a piece icon using the atlas.
      */
     public void drawPiece(String pieceId, int x, int y) {
-        UVCoords uv = uvMap.get(pieceId);
+        UVCoords uv = getUV(pieceId);
         if (uv == null) {
             System.err.println("[Psi] No UV coords for piece: " + pieceId + " (available: " + uvMap.keySet() + ")");
             // Fallback: draw gray square
