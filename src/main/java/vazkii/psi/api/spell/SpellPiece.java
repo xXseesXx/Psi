@@ -98,6 +98,49 @@ public abstract class SpellPiece {
     }
 
     /**
+     * The translation key used by the programmer.  Keeping this on the piece,
+     * rather than teaching the GUI about every registered piece, is important
+     * for addon pieces to behave exactly like built-in ones.
+     */
+    public String getUnlocalizedName() {
+        return "psi.spellpiece." + registryKey.getResourcePath();
+    }
+
+    public String getUnlocalizedDesc() {
+        return getUnlocalizedName() + ".desc";
+    }
+
+    /** Adds the standard programmer tooltip for this piece. */
+    public void getTooltip(java.util.List<String> tooltip) {
+        tooltip.add(net.minecraft.client.resources.I18n.format(getUnlocalizedName()));
+        String description = net.minecraft.client.resources.I18n.format(getUnlocalizedDesc());
+        // Missing translations are returned as their key by 1.7.10's I18n.
+        if (!description.equals(getUnlocalizedDesc())) {
+            tooltip.add("\u00a77" + description);
+        }
+        tooltip.add("\u00a78Hold Shift for parameters");
+        tooltip.add("\u00a78Hold Ctrl for statistics");
+    }
+
+    /** Whether this piece consumes programmer key input while selected. */
+    public boolean interceptKeystrokes() {
+        return false;
+    }
+
+    /**
+     * Handles typed programmer input.  {@code doit} permits callers to check
+     * whether an edit is valid before committing it.
+     */
+    public boolean onCharTyped(char character, int keyCode, boolean doit) {
+        return false;
+    }
+
+    /** Handles non-character programmer keys such as Backspace. */
+    public boolean onKeyPressed(int keyCode, boolean doit) {
+        return false;
+    }
+
+    /**
      * Adds this piece's stats to the Spell's metadata.
      */
     public void addToMetadata(SpellMetadata meta) throws SpellCompilationException {

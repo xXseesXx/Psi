@@ -91,6 +91,13 @@ public class SpellPieceRegistry {
         return null;
     }
 
+    /** A stable snapshot for GUI population and addon-friendly piece pickers. */
+    public static java.util.List<String> getRegisteredIds() {
+        java.util.List<String> ids = new java.util.ArrayList<String>(REGISTRY.keySet());
+        java.util.Collections.sort(ids);
+        return ids;
+    }
+
     /**
      * Initialize the registry with all piece types.
      * Called on mod init.
