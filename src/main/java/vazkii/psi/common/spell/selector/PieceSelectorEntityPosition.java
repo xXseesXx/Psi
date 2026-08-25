@@ -8,6 +8,7 @@
 package vazkii.psi.common.spell.selector;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.Spell;
@@ -46,6 +47,10 @@ public class PieceSelectorEntityPosition extends PieceSelector {
             throw new SpellRuntimeException(SpellRuntimeException.NULL_TARGET);
         }
 
-        return new Vector3(targetEntity.posX, targetEntity.posY, targetEntity.posZ);
+        Vector3 position = Vector3.fromEntity(targetEntity);
+        if (targetEntity instanceof EntityPlayer) {
+            position.add(0, targetEntity.getEyeHeight(), 0);
+        }
+        return position;
     }
 }
