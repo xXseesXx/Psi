@@ -96,9 +96,10 @@ public class PieceTextureAtlas {
                 return;
             }
 
-            java.awt.Graphics graphics = atlasImage.getGraphics();
-            graphics.drawImage(icon, nextX, nextY, null);
-            graphics.dispose();
+            // DynamicTexture copies the BufferedImage only in its constructor.
+            // Subsequent stitches must write to its backing pixel array directly.
+            icon.getRGB(0, 0, icon.getWidth(), icon.getHeight(), atlasTexture.getTextureData(),
+                nextY * ATLAS_WIDTH + nextX, ATLAS_WIDTH);
 
             float u0 = (float) nextX / ATLAS_WIDTH;
             float v0 = (float) nextY / ATLAS_HEIGHT;
