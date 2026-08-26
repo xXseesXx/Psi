@@ -13,6 +13,7 @@ import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import vazkii.psi.client.core.handler.ClientTickHandler;
 import vazkii.psi.client.core.handler.KeybindHandler;
 import vazkii.psi.client.core.handler.LoopcastRenderHandler;
 import vazkii.psi.client.core.handler.PsiHUDHandler;
@@ -25,8 +26,8 @@ import vazkii.psi.client.render.entity.RenderSpellProjectile;
 import vazkii.psi.client.render.tile.RenderTileProgrammer;
 import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.core.proxy.CommonProxy;
-import vazkii.psi.common.entity.EntitySpellCircle;
 import vazkii.psi.common.entity.EntitySpellCharge;
+import vazkii.psi.common.entity.EntitySpellCircle;
 import vazkii.psi.common.entity.EntitySpellGrenade;
 import vazkii.psi.common.entity.EntitySpellMine;
 import vazkii.psi.common.entity.EntitySpellProjectile;
@@ -57,6 +58,9 @@ public class ClientProxy extends CommonProxy {
         FMLCommonHandler.instance()
             .bus()
             .register(handler);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new ClientTickHandler());
 
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PsiHUDHandler());
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new LoopcastRenderHandler());
@@ -65,6 +69,11 @@ public class ClientProxy extends CommonProxy {
     @Override
     public int getMachineRenderType() {
         return machineRenderType;
+    }
+
+    @Override
+    public float getFrameTicks() {
+        return ClientTickHandler.total;
     }
 
     @Override
@@ -81,31 +90,55 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void handleLoopcastSync(final int entityId, final boolean loopcasting) {
-        net.minecraft.client.Minecraft.getMinecraft().func_152344_a(new Runnable() {
-            @Override
-            public void run() {
-                LoopcastRenderHandler.setLoopcasting(entityId, loopcasting);
-            }
-        });
+        net.minecraft.client.Minecraft.getMinecraft()
+            .func_152344_a(new Runnable() {
+
+                @Override
+                public void run() {
+                    LoopcastRenderHandler.setLoopcasting(entityId, loopcasting);
+                }
+            });
     }
 
     @Override
-    public void sparkleFX(double x, double y, double z, float r, float g, float b,
-            float motionX, float motionY, float motionZ, float size, int ageMultiplier) {
+    public void sparkleFX(double x, double y, double z, float r, float g, float b, float motionX, float motionY,
+        float motionZ, float size, int ageMultiplier) {
         if (ageMultiplier != 0 && net.minecraft.client.Minecraft.getMinecraft().theWorld != null) {
             net.minecraft.client.Minecraft.getMinecraft().effectRenderer.addEffect(
-                new FXSparkle(net.minecraft.client.Minecraft.getMinecraft().theWorld, x, y, z, size, r, g, b,
-                    ageMultiplier, motionX, motionY, motionZ));
+                new FXSparkle(
+                    net.minecraft.client.Minecraft.getMinecraft().theWorld,
+                    x,
+                    y,
+                    z,
+                    size,
+                    r,
+                    g,
+                    b,
+                    ageMultiplier,
+                    motionX,
+                    motionY,
+                    motionZ));
         }
     }
 
     @Override
-    public void wispFX(double x, double y, double z, float r, float g, float b,
-            float size, float motionX, float motionY, float motionZ, float maxAgeMultiplier) {
+    public void wispFX(double x, double y, double z, float r, float g, float b, float size, float motionX,
+        float motionY, float motionZ, float maxAgeMultiplier) {
         if (maxAgeMultiplier != 0 && net.minecraft.client.Minecraft.getMinecraft().theWorld != null) {
             net.minecraft.client.Minecraft.getMinecraft().effectRenderer.addEffect(
-                new FXWisp(net.minecraft.client.Minecraft.getMinecraft().theWorld, x, y, z, motionX, motionY, motionZ,
-                    size, r, g, b, maxAgeMultiplier));
+                new FXWisp(
+                    net.minecraft.client.Minecraft.getMinecraft().theWorld,
+                    x,
+                    y,
+                    z,
+                    motionX,
+                    motionY,
+                    motionZ,
+                    size,
+                    r,
+                    g,
+                    b,
+                    maxAgeMultiplier));
         }
     }
 }

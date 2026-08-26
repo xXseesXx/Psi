@@ -9,7 +9,13 @@ public class ItemChargeSpellBullet extends ItemSpellBullet {
 
     @Override
     public void castSpell(ItemStack stack, EntityPlayer caster) {
-        caster.worldObj.spawnEntityInWorld(new EntitySpellCharge(caster.worldObj, caster, getSpell(stack)));
+        castSpell(stack, caster, null);
+    }
+
+    @Override
+    public void castSpell(ItemStack stack, EntityPlayer caster, ItemStack colorizer) {
+        caster.worldObj.spawnEntityInWorld(
+            new EntitySpellCharge(caster.worldObj, caster, getSpell(stack)).setColorizer(colorizer));
     }
 
     @Override

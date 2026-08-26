@@ -10,8 +10,13 @@ public class ItemProjectileSpellBullet extends ItemSpellBullet {
 
     @Override
     public void castSpell(ItemStack stack, EntityPlayer caster) {
+        castSpell(stack, caster, null);
+    }
+
+    @Override
+    public void castSpell(ItemStack stack, EntityPlayer caster, ItemStack colorizer) {
         World world = caster.worldObj;
-        world.spawnEntityInWorld(new EntitySpellProjectile(world, caster, getSpell(stack)));
+        world.spawnEntityInWorld(new EntitySpellProjectile(world, caster, getSpell(stack)).setColorizer(colorizer));
     }
 
     @Override

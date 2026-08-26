@@ -8,6 +8,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import org.lwjgl.opengl.GL11;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import vazkii.psi.api.cad.ICADColorizer;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
 
@@ -15,9 +16,6 @@ import vazkii.psi.common.item.ItemCreativeCAD;
 public class PsiHUDHandler {
 
     private static final ResourceLocation BAR = new ResourceLocation("psi", "textures/gui/psi_bar.png");
-
-    /** ICADColorizer.DEFAULT_SPELL_COLOR in current Psi. */
-    private static final int PSI_COLOR = 0x13C5FF;
 
     /** Number of ticks the lost Psi remains visible as a ghost. */
     private static final int MAX_GHOST_TICKS = 30;
@@ -53,13 +51,12 @@ public class PsiHUDHandler {
 
         Minecraft mc = Minecraft.getMinecraft();
 
-        if (mc.thePlayer == null || mc.thePlayer.getHeldItem() == null
-            || !(mc.thePlayer.getHeldItem()
-                .getItem() instanceof ItemCAD
-                || mc.thePlayer.getHeldItem()
-                    .getItem() instanceof ItemCreativeCAD)) {
+        net.minecraft.item.ItemStack held = mc.thePlayer == null ? null : mc.thePlayer.getHeldItem();
+        if (held == null || !(held.getItem() instanceof ItemCAD || held.getItem() instanceof ItemCreativeCAD)) {
             return;
         }
+        int psiColor = held.getItem() instanceof ItemCAD ? ItemCAD.getSpellColor(held)
+            : ICADColorizer.DEFAULT_SPELL_COLOR;
 
         ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
 
@@ -122,7 +119,11 @@ public class PsiHUDHandler {
          * Moved 12 px to the right and extended by 12 px,
          * resulting in the right edge being 24 px farther right.
          */
-        GL11.glColor4f(0x13 / 255F, 0xC5 / 255F, 1F, 1F);
+        // GL11.glColor4f(0x13 / 255F, 0xC5 / 255F, 1F, 1F);
+        float red = ((psiColor >> 16) & 255) / 255F;
+        float green = ((psiColor >> 8) & 255) / 255F;
+        float blue = (psiColor & 255) / 255F;
+        GL11.glColor4f(red, green, blue, 1.0F);
 
         net.minecraft.client.gui.Gui.func_146110_a(x - 10, y + 26 + fillOffset - 2, 0, 140, 56, 3, 64, 256);
 
@@ -133,16 +134,12 @@ public class PsiHUDHandler {
             value,
             x + 1 - mc.fontRenderer.getStringWidth(value),
             y + 26 + fillOffset - 11,
-            PSI_COLOR);
+            psiColor);
 
-        ItemCAD cad = mc.thePlayer.getHeldItem()
-            .getItem() instanceof ItemCAD
-                ? (ItemCAD) mc.thePlayer.getHeldItem()
-                    .getItem()
-                : null;
+        ItemCAD cad = held.getItem() instanceof ItemCAD ? (ItemCAD) held.getItem() : null;
 
         if (cad != null) {
-            String overflow = Integer.toString(ItemCAD.getStoredPsi(mc.thePlayer.getHeldItem()));
+            String overflow = Integer.toString(ItemCAD.getStoredPsi(held));
 
             /*
              * Bottom text normally sits at y + 126.
@@ -168,7 +165,7 @@ public class PsiHUDHandler {
                 overflow,
                 x + 1 - mc.fontRenderer.getStringWidth(overflow),
                 bottomTextY,
-                PSI_COLOR);
+                psiColor);
         }
 
         GL11.glColor4f(1F, 1F, 1F, 1F);

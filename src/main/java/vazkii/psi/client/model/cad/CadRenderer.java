@@ -18,6 +18,11 @@ public final class CadRenderer {
     private CadRenderer() {}
 
     public static void render(CadBakedModel model, CadMaterial material, CadRenderContext context) {
+        render(model, material, context, material.tint);
+    }
+
+    /** Renders the CAD's emissive colour layer with the installed colorizer's colour. */
+    public static void render(CadBakedModel model, CadMaterial material, CadRenderContext context, int spellColor) {
         boolean texture = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
         int bound = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         CURRENT_COLOR.clear();
@@ -30,7 +35,7 @@ public final class CadRenderer {
             GL11.glScalef(context.scaleCompensation, context.scaleCompensation, context.scaleCompensation);
             renderLayer(model, material, "layer0", material.shell, 0xFFFFFF);
             renderLayer(model, material, "-1", material.shell, 0xFFFFFF);
-            renderLayer(model, material, "layer1", CadMaterial.COLOR, material.tint);
+            renderLayer(model, material, "layer1", CadMaterial.COLOR, spellColor & 0xFFFFFF);
         } finally {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, bound);
             if (!texture) GL11.glDisable(GL11.GL_TEXTURE_2D);

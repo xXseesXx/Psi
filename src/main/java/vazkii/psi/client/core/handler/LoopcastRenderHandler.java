@@ -3,19 +3,23 @@ package vazkii.psi.client.core.handler;
 import java.util.HashMap;
 import java.util.Map;
 
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import vazkii.psi.client.render.entity.RenderSpellCircle;
+import vazkii.psi.common.item.ItemCAD;
 
 /** Client-side tracking and rendering for the circle at a loopcaster's feet. */
 public class LoopcastRenderHandler {
 
     private static final Map<Integer, Long> LOOPCASTERS = new HashMap<Integer, Long>();
     private static final Map<Integer, Long> FADING_LOOPCASTERS = new HashMap<Integer, Long>();
+    /** Last color used while active, retained when the player releases or swaps the CAD. */
+    private static final Map<Integer, Integer> LOOPCAST_COLORS = new HashMap<Integer, Integer>();
 
     public static void setLoopcasting(int entityId, boolean loopcasting) {
         long time = currentTime();
@@ -30,8 +34,8 @@ public class LoopcastRenderHandler {
     @SubscribeEvent
     public void renderPlayer(RenderLivingEvent.Post event) {
         if (!(event.entity instanceof EntityPlayer)) return;
-        if (event.entity == Minecraft.getMinecraft().thePlayer && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0)
-            return;
+        if (event.entity == Minecraft.getMinecraft().thePlayer
+            && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) return;
         renderCircle((EntityPlayer) event.entity, event.x, event.y + 0.15D, event.z);
     }
 
@@ -40,12 +44,16 @@ public class LoopcastRenderHandler {
         Minecraft minecraft = Minecraft.getMinecraft();
         EntityPlayer player = minecraft.thePlayer;
         if (player == null || minecraft.gameSettings.thirdPersonView != 0) return;
-        double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.partialTicks - RenderManager.renderPosX;
+        double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.partialTicks
+            - RenderManager.renderPosX;
         // RenderWorldLast retains the first-person eye transform, unlike a player render event.
         // Convert the local player's origin back down from the camera to the feet.
-        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.partialTicks - RenderManager.renderPosY
-            - player.getEyeHeight() - 1.4D;
-        double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.partialTicks - RenderManager.renderPosZ;
+        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.partialTicks
+            - RenderManager.renderPosY
+            - player.getEyeHeight()
+            - 1.4D;
+        double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.partialTicks
+            - RenderManager.renderPosZ;
         renderCircle(player, x, y, z);
     }
 
@@ -53,19 +61,25 @@ public class LoopcastRenderHandler {
         int entityId = player.getEntityId();
         long time = currentTime();
         float multiplier;
+        int color;
         Long start = LOOPCASTERS.get(entityId);
         if (start != null) {
             multiplier = Math.min(5F, time - start) / 5F;
+            color = ItemCAD.getSpellColor(player.getHeldItem());
+            LOOPCAST_COLORS.put(entityId, color);
         } else {
             Long fadeStart = FADING_LOOPCASTERS.get(entityId);
             if (fadeStart == null) return;
             multiplier = Math.max(0F, 1F - (time - fadeStart) / 5F);
             if (multiplier <= 0F) {
                 FADING_LOOPCASTERS.remove(entityId);
+                LOOPCAST_COLORS.remove(entityId);
                 return;
             }
+            Integer cached = LOOPCAST_COLORS.get(entityId);
+            color = cached == null ? ItemCAD.getSpellColor(player.getHeldItem()) : cached.intValue();
         }
-        RenderSpellCircle.renderCircle(x, y, z, player.ticksExisted, 0.75F * multiplier);
+        RenderSpellCircle.renderCircle(x, y, z, player.ticksExisted, 0.75F * multiplier, color);
     }
 
     private static long currentTime() {

@@ -3,6 +3,9 @@ package vazkii.psi.common.entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityThrowable;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
@@ -19,12 +22,11 @@ import vazkii.psi.common.Psi;
  */
 public class EntitySpellProjectile extends EntityThrowable {
 
-    /** Default Psi colour used until CAD colorizers are backported. */
-    protected static final int SPELL_COLOR = 0x13C5FF;
-
     private static final String TAG_CASTER_UUID = "casterUUID";
     private static final String TAG_TIME_ALIVE = "timeAlive";
     private static final String TAG_SPELL = "spell";
+    private static final String TAG_COLORIZER = "colorizer";
+    private static final int DW_COLORIZER = 20;
 
     protected Spell spell;
     protected CompiledSpell compiledSpell;
@@ -57,6 +59,29 @@ public class EntitySpellProjectile extends EntityThrowable {
     @Override
     public void onUpdate() {
         tickProjectile();
+    }
+
+    protected void entityInit() {
+        super.entityInit();
+        dataWatcher.addObjectByDataType(DW_COLORIZER, 5);
+        dataWatcher.updateObject(DW_COLORIZER, new ItemStack(Blocks.air));
+    }
+
+    public EntitySpellProjectile setColorizer(ItemStack colorizer) {
+        ItemStack stored = colorizer == null ? new ItemStack(Blocks.air) : colorizer.copy();
+        stored.stackSize = 1;
+        dataWatcher.updateObject(DW_COLORIZER, stored);
+        return this;
+    }
+
+    public ItemStack getColorizer() {
+        ItemStack stack = dataWatcher.getWatchableObjectItemStack(DW_COLORIZER);
+        return stack != null && stack.getItem() != null && stack.getItem() != Item.getItemFromBlock(Blocks.air) ? stack
+            : null;
+    }
+
+    public int getSpellColor() {
+        return Psi.proxy.getColorForColorizer(getColorizer());
     }
 
     protected void tickProjectile() {
@@ -109,11 +134,22 @@ public class EntitySpellProjectile extends EntityThrowable {
             double vz = baseZ + (rand.nextDouble() - 0.5D) * 0.6D;
             double length = Math.sqrt(vx * vx + vy * vy + vz * vz);
             if (length < 1.0E-5D) continue;
-            float r = ((SPELL_COLOR >> 16) & 255) / 255F;
-            float g = ((SPELL_COLOR >> 8) & 255) / 255F;
-            float b = (SPELL_COLOR & 255) / 255F;
-            Psi.proxy.sparkleFX(posX, posY, posZ, r, g, b,
-                (float) (vx / length * distance), (float) (vy / length * distance), (float) (vz / length * distance), 1.2F, 12);
+            int color = getSpellColor();
+            float r = ((color >> 16) & 255) / 255F;
+            float g = ((color >> 8) & 255) / 255F;
+            float b = (color & 255) / 255F;
+            Psi.proxy.sparkleFX(
+                posX,
+                posY,
+                posZ,
+                r,
+                g,
+                b,
+                (float) (vx / length * distance),
+                (float) (vy / length * distance),
+                (float) (vz / length * distance),
+                1.2F,
+                12);
         }
     }
 
@@ -172,6 +208,8 @@ public class EntitySpellProjectile extends EntityThrowable {
             spell.writeToNBT(spellNbt);
             nbt.setTag(TAG_SPELL, spellNbt);
         }
+        ItemStack colorizer = getColorizer();
+        if (colorizer != null) nbt.setTag(TAG_COLORIZER, colorizer.writeToNBT(new NBTTagCompound()));
     }
 
     @Override
@@ -193,6 +231,7 @@ public class EntitySpellProjectile extends EntityThrowable {
                 System.err.println("[Psi] Failed to load spell from projectile NBT: " + e.getMessage());
             }
         }
+        if (nbt.hasKey(TAG_COLORIZER)) setColorizer(ItemStack.loadItemStackFromNBT(nbt.getCompoundTag(TAG_COLORIZER)));
     }
 
     @Override

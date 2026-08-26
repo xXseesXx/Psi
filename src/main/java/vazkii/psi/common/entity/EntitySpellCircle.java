@@ -2,6 +2,9 @@ package vazkii.psi.common.entity;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
@@ -16,7 +19,8 @@ public class EntitySpellCircle extends Entity {
 
     public static final int CAST_TIMES = 20;
     public static final int CAST_DELAY = 5;
-    private static final int SPELL_COLOR = 0x13C5FF;
+    private static final String TAG_COLORIZER = "colorizer";
+    private static final int DW_COLORIZER = 20;
     private EntityPlayer caster;
     private Spell spell;
     private CompiledSpell compiled;
@@ -40,7 +44,11 @@ public class EntitySpellCircle extends Entity {
     public void onUpdate() {
         ++age;
         if (worldObj.isRemote) spawnCircleParticles();
-        if (!worldObj.isRemote && age > CAST_DELAY && age % CAST_DELAY == 0 && casts < CAST_TIMES && caster != null && compiled != null) {
+        if (!worldObj.isRemote && age > CAST_DELAY
+            && age % CAST_DELAY == 0
+            && casts < CAST_TIMES
+            && caster != null
+            && compiled != null) {
             try {
                 compiled.execute(
                     new SpellContext().setPlayer(caster)
@@ -55,15 +63,26 @@ public class EntitySpellCircle extends Entity {
     }
 
     private void spawnCircleParticles() {
-        float r = ((SPELL_COLOR >> 16) & 255) / 255F;
-        float g = ((SPELL_COLOR >> 8) & 255) / 255F;
-        float b = (SPELL_COLOR & 255) / 255F;
+        int color = getSpellColor();
+        float r = ((color >> 16) & 255) / 255F;
+        float g = ((color >> 8) & 255) / 255F;
+        float b = (color & 255) / 255F;
         for (int i = 0; i < 5; i++) {
             double angle = rand.nextDouble() * Math.PI * 2D;
             double radius = (rand.nextDouble() - 0.5D);
             float rise = 0.15F + rand.nextFloat() * 0.03F;
-            Psi.proxy.sparkleFX(posX + Math.cos(angle) * radius, posY, posZ + Math.sin(angle) * radius,
-                r, g, b, 0F, rise, 0F, 0.25F, 15);
+            Psi.proxy.sparkleFX(
+                posX + Math.cos(angle) * radius,
+                posY,
+                posZ + Math.sin(angle) * radius,
+                r,
+                g,
+                b,
+                0F,
+                rise,
+                0F,
+                0.25F,
+                15);
         }
     }
 
@@ -71,18 +90,41 @@ public class EntitySpellCircle extends Entity {
         return age;
     }
 
+    public EntitySpellCircle setColorizer(ItemStack colorizer) {
+        ItemStack stored = colorizer == null ? new ItemStack(Blocks.air) : colorizer.copy();
+        stored.stackSize = 1;
+        dataWatcher.updateObject(DW_COLORIZER, stored);
+        return this;
+    }
+
+    public ItemStack getColorizer() {
+        ItemStack stack = dataWatcher.getWatchableObjectItemStack(DW_COLORIZER);
+        return stack != null && stack.getItem() != null && stack.getItem() != Item.getItemFromBlock(Blocks.air) ? stack
+            : null;
+    }
+
+    public int getSpellColor() {
+        return Psi.proxy.getColorForColorizer(getColorizer());
+    }
+
     @Override
-    protected void entityInit() {}
+    protected void entityInit() {
+        dataWatcher.addObjectByDataType(DW_COLORIZER, 5);
+        dataWatcher.updateObject(DW_COLORIZER, new ItemStack(Blocks.air));
+    }
 
     @Override
     protected void readEntityFromNBT(NBTTagCompound tag) {
         age = tag.getInteger("age");
         casts = tag.getInteger("casts");
+        if (tag.hasKey(TAG_COLORIZER)) setColorizer(ItemStack.loadItemStackFromNBT(tag.getCompoundTag(TAG_COLORIZER)));
     }
 
     @Override
     protected void writeEntityToNBT(NBTTagCompound tag) {
         tag.setInteger("age", age);
         tag.setInteger("casts", casts);
+        ItemStack colorizer = getColorizer();
+        if (colorizer != null) tag.setTag(TAG_COLORIZER, colorizer.writeToNBT(new NBTTagCompound()));
     }
 }

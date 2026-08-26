@@ -5,6 +5,7 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
+import vazkii.psi.api.cad.ICADColorizer;
 import vazkii.psi.common.block.tile.TileCADAssembler;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
@@ -51,6 +52,7 @@ public class ContainerCADAssembler extends Container {
         addSlotToContainer(inputSlot(TileCADAssembler.SLOT_CORE, 100, 91));
         addSlotToContainer(inputSlot(TileCADAssembler.SLOT_SOCKET, 140, 91));
         addSlotToContainer(inputSlot(TileCADAssembler.SLOT_BATTERY, 110, 111));
+        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_DYE, 130, 111));
 
         for (int row = 0; row < 4; row++) for (int col = 0; col < 3; col++) {
             final int index = TileCADAssembler.SLOT_BULLET_START + col + row * 3;
@@ -107,17 +109,18 @@ public class ContainerCADAssembler extends Container {
         ItemStack sourceStack = source.getStack();
         ItemStack original = sourceStack.copy();
         boolean moved;
-        if (slot >= 18) {
+        if (slot >= 19) {
             if (sourceStack.getItem() instanceof ItemCADAssembly) moved = mergeItemStack(sourceStack, 2, 3, false);
             else if (sourceStack.getItem() instanceof ItemCADCore) moved = mergeItemStack(sourceStack, 3, 4, false);
             else if (sourceStack.getItem() instanceof ItemCADSocket) moved = mergeItemStack(sourceStack, 4, 5, false);
             else if (sourceStack.getItem() instanceof ItemCADBattery) moved = mergeItemStack(sourceStack, 5, 6, false);
+            else if (sourceStack.getItem() instanceof ICADColorizer) moved = mergeItemStack(sourceStack, 6, 7, false);
             else if (sourceStack.getItem() instanceof ItemCAD || sourceStack.getItem() instanceof ItemCreativeCAD)
                 moved = mergeItemStack(sourceStack, 1, 2, false);
             else if (sourceStack.getItem() instanceof ItemSpellBullet) moved = moveBulletsToMagazine(sourceStack);
             else return null;
         } else {
-            moved = mergeItemStack(sourceStack, 18, inventorySlots.size(), true);
+            moved = mergeItemStack(sourceStack, 19, inventorySlots.size(), true);
         }
 
         if (!moved) return null;
@@ -134,7 +137,7 @@ public class ContainerCADAssembler extends Container {
      */
     private boolean moveBulletsToMagazine(ItemStack sourceStack) {
         boolean moved = false;
-        for (int slotIndex = 6; slotIndex < 18 && sourceStack.stackSize > 0; slotIndex++) {
+        for (int slotIndex = 7; slotIndex < 19 && sourceStack.stackSize > 0; slotIndex++) {
             Slot target = (Slot) inventorySlots.get(slotIndex);
             if (target.getHasStack() || !target.isItemValid(sourceStack)) continue;
 

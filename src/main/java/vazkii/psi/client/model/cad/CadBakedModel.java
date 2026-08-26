@@ -1,6 +1,8 @@
 package vazkii.psi.client.model.cad;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /** Immutable, render-ready CAD geometry. */
 public final class CadBakedModel {

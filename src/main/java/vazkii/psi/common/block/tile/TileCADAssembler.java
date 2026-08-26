@@ -7,6 +7,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 
+import vazkii.psi.api.cad.ICADColorizer;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
 import vazkii.psi.common.item.ItemSpellBullet;
@@ -26,7 +27,8 @@ public class TileCADAssembler extends TileEntity implements IInventory {
     public static final int SLOT_BATTERY = 4;
     public static final int SLOT_BULLET_START = 5;
     public static final int SLOT_OUTPUT = SLOT_BULLET_START + MAGAZINE_SLOTS;
-    private final ItemStack[] inventory = new ItemStack[SLOT_OUTPUT + 1];
+    public static final int SLOT_DYE = SLOT_OUTPUT + 1;
+    private final ItemStack[] inventory = new ItemStack[SLOT_DYE + 1];
 
     @Override
     public int getSizeInventory() {
@@ -104,6 +106,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
         if (slot == SLOT_CORE) return stack.getItem() instanceof ItemCADCore;
         if (slot == SLOT_SOCKET) return stack.getItem() instanceof ItemCADSocket;
         if (slot == SLOT_BATTERY) return stack.getItem() instanceof ItemCADBattery;
+        if (slot == SLOT_DYE) return stack.getItem() instanceof ICADColorizer;
         return slot >= SLOT_BULLET_START && slot < SLOT_OUTPUT
             && stack.getItem() instanceof ItemSpellBullet
             && isBulletSlotEnabled(slot - SLOT_BULLET_START);
@@ -112,7 +115,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
     private void changed(int slot) {
         if (slot == SLOT_CAD) loadMagazine();
         else if (slot >= SLOT_BULLET_START && slot < SLOT_OUTPUT) saveMagazineSlot(slot);
-        if (slot >= SLOT_ASSEMBLY && slot <= SLOT_BATTERY) {
+        if (slot >= SLOT_ASSEMBLY && slot <= SLOT_BATTERY || slot == SLOT_DYE) {
             inventory[SLOT_OUTPUT] = null;
             updateCraftResult();
         }
@@ -122,8 +125,12 @@ public class TileCADAssembler extends TileEntity implements IInventory {
     private void updateCraftResult() {
         if (inventory[SLOT_OUTPUT] != null) return;
         ItemStack assembly = inventory[SLOT_ASSEMBLY];
-        if (assembly != null) inventory[SLOT_OUTPUT] = ItemCAD
-            .createCAD(assembly, inventory[SLOT_CORE], inventory[SLOT_SOCKET], inventory[SLOT_BATTERY]);
+        if (assembly != null) inventory[SLOT_OUTPUT] = ItemCAD.createCAD(
+            assembly,
+            inventory[SLOT_CORE],
+            inventory[SLOT_SOCKET],
+            inventory[SLOT_BATTERY],
+            inventory[SLOT_DYE]);
     }
 
     /** Called by the output slot after a player takes the assembled CAD. */
@@ -132,6 +139,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
         inventory[SLOT_CORE] = null;
         inventory[SLOT_SOCKET] = null;
         inventory[SLOT_BATTERY] = null;
+        inventory[SLOT_DYE] = null;
         inventory[SLOT_OUTPUT] = null;
         markDirty();
     }

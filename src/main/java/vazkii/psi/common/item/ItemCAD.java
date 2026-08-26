@@ -19,6 +19,7 @@ import net.minecraft.world.World;
 import org.lwjgl.input.Keyboard;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import vazkii.psi.api.cad.ICADColorizer;
 import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.spell.EnumSpellStat;
 import vazkii.psi.api.spell.Spell;
@@ -43,6 +44,7 @@ public class ItemCAD extends Item {
     private static final String TAG_CORE = "cadCore";
     private static final String TAG_SOCKET = "cadSocket";
     private static final String TAG_BATTERY = "cadBattery";
+    private static final String TAG_COLORIZER = "cadColorizer";
     private static final String TAG_BULLETS = "bullets";
     private static final String TAG_SELECTED_SLOT = "selectedSlot";
     private static final String TAG_STORED_PSI = "storedPsi";
@@ -59,6 +61,11 @@ public class ItemCAD extends Item {
 
     /** Creates a CAD and records the parts used by the CAD Assembler. */
     public static ItemStack createCAD(ItemStack assembly, ItemStack core, ItemStack socket, ItemStack battery) {
+        return createCAD(assembly, core, socket, battery, null);
+    }
+
+    public static ItemStack createCAD(ItemStack assembly, ItemStack core, ItemStack socket, ItemStack battery,
+        ItemStack colorizer) {
         ItemStack cad = new ItemStack(CommonProxy.itemCAD);
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString(TAG_ASSEMBLY, componentName(assembly));
@@ -66,7 +73,44 @@ public class ItemCAD extends Item {
         tag.setString(TAG_SOCKET, componentName(socket));
         tag.setString(TAG_BATTERY, componentName(battery));
         cad.setTagCompound(tag);
+        setColorizer(cad, colorizer);
         return cad;
+    }
+
+    public static ItemStack getColorizer(ItemStack cad) {
+        if (cad == null || !cad.hasTagCompound()
+            || !cad.getTagCompound()
+                .hasKey(TAG_COLORIZER))
+            return null;
+        ItemStack colorizer = ItemStack.loadItemStackFromNBT(
+            cad.getTagCompound()
+                .getCompoundTag(TAG_COLORIZER));
+        return colorizer != null && colorizer.getItem() instanceof ICADColorizer ? colorizer : null;
+    }
+
+    public static void setColorizer(ItemStack cad, ItemStack colorizer) {
+        if (cad == null) return;
+        if (!cad.hasTagCompound()) cad.setTagCompound(new NBTTagCompound());
+        if (colorizer == null || colorizer.getItem() == null) {
+            cad.getTagCompound()
+                .removeTag(TAG_COLORIZER);
+            return;
+        }
+        ItemStack stored = colorizer.copy();
+        stored.stackSize = 1;
+        cad.getTagCompound()
+            .setTag(TAG_COLORIZER, stored.writeToNBT(new NBTTagCompound()));
+    }
+
+    public static int getSpellColor(ItemStack cad) {
+        return Psi.proxy.getColorForColorizer(getColorizer(cad));
+    }
+
+    /** Colourizer installed in the CAD currently held by the player, if any. */
+    public static ItemStack getHeldColorizer(EntityPlayer player) {
+        if (player == null) return null;
+        ItemStack held = player.getHeldItem();
+        return held != null && held.getItem() instanceof ItemCAD ? getColorizer(held) : null;
     }
 
     /** Returns a component stat from the part that supplies it, or zero when that part is absent. */
@@ -353,7 +397,7 @@ public class ItemCAD extends Item {
                 return stack;
             }
             if (bullet != null && bullet.getItem() instanceof ItemSpellBullet) {
-                ((ItemSpellBullet) bullet.getItem()).castSpell(bullet, player);
+                ((ItemSpellBullet) bullet.getItem()).castSpell(bullet, player, getColorizer(stack));
             } else {
                 // A spell stored directly on a legacy CAD is a basic bullet.
                 new ItemSpellBullet().castSpell(stack, player);
@@ -410,6 +454,12 @@ public class ItemCAD extends Item {
                 addComponentTooltip(stack, tooltip, TAG_CORE, "Core");
                 addComponentTooltip(stack, tooltip, TAG_SOCKET, "Socket");
                 addComponentTooltip(stack, tooltip, TAG_BATTERY, "Battery");
+                ItemStack colorizer = getColorizer(stack);
+                tooltip.add(
+                    EnumChatFormatting.GREEN + "Colorizer"
+                        + EnumChatFormatting.GRAY
+                        + ": "
+                        + (colorizer == null ? "None" : colorizer.getDisplayName()));
                 tooltip.add(
                     EnumChatFormatting.AQUA + "Magazine"
                         + EnumChatFormatting.GRAY

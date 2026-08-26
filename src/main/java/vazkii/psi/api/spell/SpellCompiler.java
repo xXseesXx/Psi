@@ -78,11 +78,11 @@ public class SpellCompiler {
      * Uses depth-first traversal to ensure dependencies are compiled before dependents.
      */
     private void compilePiece(SpellPiece piece) throws SpellCompilationException {
-        // If already compiled, move to top of execution stack
+        // A shared dependency has already been placed before its first
+        // consumer. Moving it to the end here would make that first consumer
+        // execute before its value is available (for example Caster shared by
+        // Entity Position and Entity Look for Vector Raycast).
         if (compiled.actionMap.containsKey(piece)) {
-            CompiledSpell.Action action = compiled.actionMap.get(piece);
-            compiled.actions.remove(action);
-            compiled.actions.add(action);
             return;
         }
 

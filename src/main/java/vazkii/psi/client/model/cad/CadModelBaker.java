@@ -1,6 +1,8 @@
 package vazkii.psi.client.model.cad;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /** Expands JSON cuboids and face UVs into immutable quads exactly once. */
 public final class CadModelBaker {

@@ -22,6 +22,16 @@ public class ItemLoopcastSpellBullet extends ItemSpellBullet {
         LoopcastHandler.start(caster, stack);
     }
 
+    /**
+     * Loopcasts have no spawned visual entity to carry a colorizer. The
+     * loopcast renderer reads the held CAD directly, so retain the normal
+     * scheduler path when ItemCAD supplies its installed colorizer.
+     */
+    @Override
+    public void castSpell(ItemStack stack, EntityPlayer caster, ItemStack colorizer) {
+        castSpell(stack, caster);
+    }
+
     public boolean castSpellNow(ItemStack stack, EntityPlayer caster, int index) throws Exception {
         return castSpellNow(stack, caster, index, true);
     }

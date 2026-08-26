@@ -32,6 +32,7 @@ public class PacketLoopcastSync implements IMessage {
     }
 
     public static class Handler implements IMessageHandler<PacketLoopcastSync, IMessage> {
+
         @Override
         public IMessage onMessage(PacketLoopcastSync message, MessageContext context) {
             Psi.proxy.handleLoopcastSync(message.entityId, message.loopcasting);

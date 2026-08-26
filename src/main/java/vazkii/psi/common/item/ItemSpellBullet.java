@@ -43,6 +43,11 @@ public class ItemSpellBullet extends Item {
 
     /** Executes the normal (caster-focused) bullet immediately. */
     public void castSpell(ItemStack stack, EntityPlayer caster) throws Exception {
+        castSpell(stack, caster, null);
+    }
+
+    /** Casts this bullet using the colorizer installed in the originating CAD. */
+    public void castSpell(ItemStack stack, EntityPlayer caster, ItemStack colorizer) throws Exception {
         Spell spell = getSpell(stack);
         if (spell == null) return;
         CompiledSpell compiled = new SpellCompiler().compile(spell);

@@ -14,8 +14,8 @@ public class FXWisp extends FXSparkle {
     private final float wispScale;
     private final int halfLife;
 
-    public FXWisp(World world, double x, double y, double z, double mx, double my, double mz,
-            float size, float red, float green, float blue, float maxAgeMultiplier) {
+    public FXWisp(World world, double x, double y, double z, double mx, double my, double mz, float size, float red,
+        float green, float blue, float maxAgeMultiplier) {
         super(world, x, y, z, size, red, green, blue, 1, mx, my, mz);
         particleAlpha = 0.375F;
         wispScale = (rand.nextFloat() * 0.5F + 0.5F) * 2F * size;
@@ -41,8 +41,10 @@ public class FXWisp extends FXSparkle {
 
     @Override
     public void renderParticle(Tessellator ignored, float partialTicks, float rotationX, float rotationXZ,
-            float rotationZ, float rotationYZ, float rotationXY) {
-        Minecraft.getMinecraft().getTextureManager().bindTexture(TEXTURE);
+        float rotationZ, float rotationYZ, float rotationXY) {
+        Minecraft.getMinecraft()
+            .getTextureManager()
+            .bindTexture(TEXTURE);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
         GL11.glDepthMask(false);

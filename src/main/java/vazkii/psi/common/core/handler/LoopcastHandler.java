@@ -57,7 +57,8 @@ public class LoopcastHandler {
 
     private static void sync(EntityPlayer player, boolean loopcasting) {
         if (PacketHandler.INSTANCE == null) return;
-        PacketHandler.INSTANCE.sendToAllAround(new PacketLoopcastSync(player.getEntityId(), loopcasting),
+        PacketHandler.INSTANCE.sendToAllAround(
+            new PacketLoopcastSync(player.getEntityId(), loopcasting),
             new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 64D));
     }
 

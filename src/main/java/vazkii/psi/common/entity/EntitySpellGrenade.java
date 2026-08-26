@@ -32,7 +32,9 @@ public class EntitySpellGrenade extends EntitySpellProjectile {
             if (hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
                 ForgeDirection side = ForgeDirection.getOrientation(hit.sideHit);
                 double offset = side == ForgeDirection.UP ? 0D : 0.1D;
-                setPosition(hit.hitVec.xCoord + side.offsetX * offset, hit.hitVec.yCoord + side.offsetY * offset,
+                setPosition(
+                    hit.hitVec.xCoord + side.offsetX * offset,
+                    hit.hitVec.yCoord + side.offsetY * offset,
                     hit.hitVec.zCoord + side.offsetZ * offset);
             }
             motionX = motionY = motionZ = 0;
