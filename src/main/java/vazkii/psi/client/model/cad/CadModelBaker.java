@@ -16,9 +16,14 @@ public final class CadModelBaker {
             if (v == null) continue;
             for (int i = 0; i < 12; i += 3) rotate(v, i, e.origin, e.axis, e.angle);
             float[] normal = normal(v);
+
             String layer = entry.getValue().texture.startsWith("#") ? entry.getValue().texture.substring(1)
                 : entry.getValue().texture;
-            float[] uv = uv(entry.getValue(), model.textureWidth, model.textureHeight);
+
+            // Minecraft block/item JSON UVs are expressed in the fixed 0..16
+            // model-texture coordinate space, regardless of PNG resolution.
+            float[] uv = uv(entry.getKey(), entry.getValue(), model.textureWidth, model.textureHeight);
+
             out.add(new CadBakedModel.Quad(layer, v, uv, normal));
         }
         return new CadBakedModel(out, model.transforms);
@@ -38,19 +43,48 @@ public final class CadModelBaker {
         return null;
     }
 
-    private static float[] uv(CadModel.Face f, float w, float h) {
-        float u0 = f.uv[0] / w, v0 = f.uv[1] / h, u1 = f.uv[2] / w, v1 = f.uv[3] / h;
-        float[] a = new float[] { u0, v1, u1, v1, u1, v0, u0, v0 };
+    private static float[] uv(String face, CadModel.Face f, float w, float h) {
+
+        float scale = 2F;
+
+        float u0 = (f.uv[0] * scale) / w;
+        float v0 = (f.uv[1] * scale) / h;
+        float u1 = (f.uv[2] * scale) / w;
+        float v1 = (f.uv[3] * scale) / h;
+
+        float[] a;
+
+        if ("north".equals(face)) {
+            a = new float[] { u0, v1, u0, v0, u1, v0, u1, v1 };
+        } else if ("south".equals(face)) {
+            a = new float[] { u1, v1, u1, v0, u0, v0, u0, v1 };
+        } else if ("west".equals(face)) {
+            a = new float[] { u1, v1, u1, v0, u0, v0, u0, v1 };
+        } else if ("east".equals(face)) {
+            a = new float[] { u1, v1, u1, v0, u0, v0, u0, v1 };
+        } else if ("up".equals(face)) {
+            a = new float[] { u0, v1, u0, v0, u1, v0, u1, v1 };
+        } else if ("down".equals(face)) {
+            a = new float[] { u0, v1, u0, v0, u1, v0, u1, v1 };
+        } else {
+            return new float[] { u0, v1, u1, v1, u1, v0, u0, v0 };
+        }
+
         int r = ((f.rotation % 360) + 360) % 360 / 90;
+
         while (r-- > 0) {
-            float u = a[0], v = a[1];
+            float u = a[0];
+            float v = a[1];
+
             for (int i = 0; i < 6; i += 2) {
                 a[i] = a[i + 2];
                 a[i + 1] = a[i + 3];
             }
+
             a[6] = u;
             a[7] = v;
         }
+
         return a;
     }
 

@@ -27,4 +27,11 @@ public final class CadBakedModel {
             normal = n;
         }
     }
+
+    public boolean hasLayer(String layer) {
+        for (Quad quad : quads) {
+            if (layer.equals(quad.layer)) return true;
+        }
+        return false;
+    }
 }

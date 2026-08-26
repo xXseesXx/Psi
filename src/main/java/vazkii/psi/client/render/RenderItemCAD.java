@@ -3,6 +3,7 @@ package vazkii.psi.client.render;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.IItemRenderer;
 
+import vazkii.psi.client.model.cad.CadBakedModel;
 import vazkii.psi.client.model.cad.CadMaterial;
 import vazkii.psi.client.model.cad.CadModels;
 import vazkii.psi.client.model.cad.CadRenderContext;
@@ -30,10 +31,11 @@ public class RenderItemCAD implements IItemRenderer {
 
     @Override
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-        CadRenderer.render(
-            CadModels.cad(),
-            CadMaterial.forAssembly(ItemCAD.getAssemblyId(item)),
-            CadRenderContext.of(type),
-            ItemCAD.getSpellColor(item));
+        String assembly = ItemCAD.getAssemblyId(item);
+
+        CadBakedModel model = "cad_assembly_iron".equals(assembly) ? CadModels.iron() : CadModels.cad();
+
+        CadRenderer
+            .render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), ItemCAD.getSpellColor(item));
     }
 }
