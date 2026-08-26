@@ -14,6 +14,7 @@ import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import vazkii.psi.client.core.handler.KeybindHandler;
+import vazkii.psi.client.core.handler.PsiHUDHandler;
 import vazkii.psi.client.render.BlockMachineRenderer;
 import vazkii.psi.client.render.RenderItemCAD;
 import vazkii.psi.client.render.tile.RenderTileProgrammer;
@@ -27,15 +28,22 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
+
         machineRenderType = RenderingRegistry.getNextAvailableRenderId();
         RenderingRegistry.registerBlockHandler(new BlockMachineRenderer(machineRenderType));
+
         ClientRegistry.bindTileEntitySpecialRenderer(TileProgrammer.class, new RenderTileProgrammer());
+
         MinecraftForgeClient.registerItemRenderer(CommonProxy.itemCAD, new RenderItemCAD());
+
         KeybindHandler handler = new KeybindHandler();
         KeybindHandler.init();
+
         FMLCommonHandler.instance()
             .bus()
             .register(handler);
+
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PsiHUDHandler());
     }
 
     @Override
@@ -43,4 +51,15 @@ public class ClientProxy extends CommonProxy {
         return machineRenderType;
     }
 
+    @Override
+    public void handlePsiSync(final int previous, final int current, final int maximum) {
+        net.minecraft.client.Minecraft.getMinecraft()
+            .func_152344_a(new Runnable() {
+
+                @Override
+                public void run() {
+                    PsiHUDHandler.setPsi(previous, current, maximum);
+                }
+            });
+    }
 }

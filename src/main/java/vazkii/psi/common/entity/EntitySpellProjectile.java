@@ -22,10 +22,10 @@ public class EntitySpellProjectile extends EntityThrowable {
     private static final String TAG_TIME_ALIVE = "timeAlive";
     private static final String TAG_SPELL = "spell";
 
-    private Spell spell;
-    private CompiledSpell compiledSpell;
+    protected Spell spell;
+    protected CompiledSpell compiledSpell;
     private String casterUUID; // Store UUID as string for 1.7.10
-    private int timeAlive;
+    protected int timeAlive;
 
     // Required for entity registration
     public EntitySpellProjectile(World world) {
@@ -52,6 +52,10 @@ public class EntitySpellProjectile extends EntityThrowable {
 
     @Override
     public void onUpdate() {
+        tickProjectile();
+    }
+
+    protected void tickProjectile() {
         super.onUpdate();
 
         timeAlive++;
@@ -71,9 +75,14 @@ public class EntitySpellProjectile extends EntityThrowable {
             return;
         }
 
+        executeSpell(mop == null ? null : mop.entityHit);
+        setDead();
+    }
+
+    protected void executeSpell(net.minecraft.entity.Entity hitEntity) {
         // Execute the spell if we have one
-        if (spell != null && compiledSpell != null && getThrower() instanceof EntityPlayer) {
-            EntityPlayer caster = (EntityPlayer) getThrower();
+        EntityPlayer caster = getCaster();
+        if (spell != null && compiledSpell != null && caster != null) {
 
             // Create spell context
             SpellContext context = new SpellContext();
@@ -82,8 +91,8 @@ public class EntitySpellProjectile extends EntityThrowable {
             context.spell = spell;
 
             // If we hit an entity, store it in customData for tricks to use
-            if (mop.entityHit != null) {
-                context.customData.put("psi:hitEntity", mop.entityHit);
+            if (hitEntity != null) {
+                context.customData.put("psi:hitEntity", hitEntity);
             }
 
             // Execute the spell
@@ -99,8 +108,6 @@ public class EntitySpellProjectile extends EntityThrowable {
             }
         }
 
-        // Despawn the projectile
-        setDead();
     }
 
     @Override
@@ -152,5 +159,15 @@ public class EntitySpellProjectile extends EntityThrowable {
 
     public int getTimeAlive() {
         return timeAlive;
+    }
+
+    private EntityPlayer getCaster() {
+        if (getThrower() instanceof EntityPlayer) return (EntityPlayer) getThrower();
+        try {
+            return casterUUID == null || casterUUID.isEmpty() ? null
+                : worldObj.func_152378_a(java.util.UUID.fromString(casterUUID));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 }

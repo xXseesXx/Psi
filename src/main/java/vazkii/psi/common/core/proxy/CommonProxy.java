@@ -3,6 +3,7 @@ package vazkii.psi.common.core.proxy;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -18,9 +19,22 @@ import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.core.PsiCreativeTab;
 import vazkii.psi.common.core.handler.ConfigHandler;
 import vazkii.psi.common.core.handler.GuiHandler;
+import vazkii.psi.common.core.handler.LoopcastHandler;
+import vazkii.psi.common.core.handler.PlayerPsiHandler;
+import vazkii.psi.common.entity.EntitySpellCharge;
+import vazkii.psi.common.entity.EntitySpellCircle;
+import vazkii.psi.common.entity.EntitySpellGrenade;
+import vazkii.psi.common.entity.EntitySpellMine;
 import vazkii.psi.common.entity.EntitySpellProjectile;
 import vazkii.psi.common.item.ItemCAD;
+import vazkii.psi.common.item.ItemChargeSpellBullet;
+import vazkii.psi.common.item.ItemCircleSpellBullet;
 import vazkii.psi.common.item.ItemCreativeCAD;
+import vazkii.psi.common.item.ItemDetonator;
+import vazkii.psi.common.item.ItemGrenadeSpellBullet;
+import vazkii.psi.common.item.ItemLoopcastSpellBullet;
+import vazkii.psi.common.item.ItemMineSpellBullet;
+import vazkii.psi.common.item.ItemProjectileSpellBullet;
 import vazkii.psi.common.item.ItemSpellBullet;
 import vazkii.psi.common.item.component.ItemCADAssembly;
 import vazkii.psi.common.item.component.ItemCADBattery;
@@ -31,14 +45,19 @@ import vazkii.psi.common.lib.LibMisc;
 
 public class CommonProxy {
 
+    /** Client-only proxies receive authoritative Psi-bar updates through this no-op server hook. */
+    public void handlePsiSync(int previous, int current, int maximum) {}
+
     /** Legacy block renderer ID. The dedicated server uses the vanilla renderer. */
     public int getMachineRenderType() {
         return 0;
     }
 
     public static Item itemCAD;
-    public static Item itemSpellBullet;
+    public static Item itemSpellBullet, itemSpellBulletProjectile, itemSpellBulletLoop, itemSpellBulletCircle,
+        itemSpellBulletGrenade, itemSpellBulletCharge, itemSpellBulletMine;
     public static Item itemCreativeCAD;
+    public static Item itemDetonator;
     public static Item itemCADAssemblyIron, itemCADAssemblyGold, itemCADAssemblyPsimetal;
     public static Item itemCADAssemblyEbonyPsimetal, itemCADAssemblyIvoryPsimetal, itemCADAssemblyCreative;
     public static Item itemCADCoreBasic, itemCADCoreOverclocked, itemCADCoreConductive, itemCADCoreHyperclocked,
@@ -69,6 +88,16 @@ public class CommonProxy {
             .setTextureName("psi:cad_creative_gizmo")
             .setCreativeTab(PsiCreativeTab.TAB);
         GameRegistry.registerItem(itemSpellBullet, "spell_bullet");
+        itemSpellBulletProjectile = registerBullet(new ItemProjectileSpellBullet(), "spell_bullet_projectile");
+        itemSpellBulletLoop = registerBullet(new ItemLoopcastSpellBullet(), "spell_bullet_loop");
+        itemSpellBulletCircle = registerBullet(new ItemCircleSpellBullet(), "spell_bullet_circle");
+        itemSpellBulletGrenade = registerBullet(new ItemGrenadeSpellBullet(), "spell_bullet_grenade");
+        itemSpellBulletCharge = registerBullet(new ItemChargeSpellBullet(), "spell_bullet_charge");
+        itemSpellBulletMine = registerBullet(new ItemMineSpellBullet(), "spell_bullet_mine");
+        itemDetonator = new ItemDetonator().setUnlocalizedName("psi.detonator")
+            .setTextureName("psi:detonator")
+            .setCreativeTab(PsiCreativeTab.TAB);
+        GameRegistry.registerItem(itemDetonator, "detonator");
         GameRegistry.registerItem(itemCreativeCAD, "cad_creative");
         itemCADAssemblyIron = registerComponent(
             new ItemCADAssembly(),
@@ -210,6 +239,12 @@ public class CommonProxy {
 
         // Register packet handler for client-server communication
         vazkii.psi.common.network.PacketHandler.init();
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new LoopcastHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new PlayerPsiHandler());
         Psi.logger.info("Registered PacketHandler");
 
         // Register entities
@@ -223,6 +258,10 @@ public class CommonProxy {
             true // send velocity updates
         );
         Psi.logger.info("Registered EntitySpellProjectile");
+        EntityRegistry.registerModEntity(EntitySpellGrenade.class, "spell_grenade", 2, Psi.instance, 64, 1, true);
+        EntityRegistry.registerModEntity(EntitySpellMine.class, "spell_mine", 3, Psi.instance, 64, 1, true);
+        EntityRegistry.registerModEntity(EntitySpellCharge.class, "spell_charge", 4, Psi.instance, 64, 1, true);
+        EntityRegistry.registerModEntity(EntitySpellCircle.class, "spell_circle", 5, Psi.instance, 64, 1, true);
     }
 
     public void postInit(FMLPostInitializationEvent event) {}
@@ -240,6 +279,14 @@ public class CommonProxy {
         for (int i = 0; i < stats.length; i += 2) {
             item.addStat((String) stats[i], ((Integer) stats[i + 1]).intValue());
         }
+        GameRegistry.registerItem(item, name);
+        return item;
+    }
+
+    private static Item registerBullet(ItemSpellBullet item, String name) {
+        item.setUnlocalizedName("psi." + name)
+            .setTextureName("psi:" + name)
+            .setCreativeTab(PsiCreativeTab.TAB);
         GameRegistry.registerItem(item, name);
         return item;
     }

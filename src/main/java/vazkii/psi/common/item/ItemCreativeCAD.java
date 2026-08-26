@@ -10,7 +10,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 import vazkii.psi.api.spell.Spell;
-import vazkii.psi.common.entity.EntitySpellProjectile;
+import vazkii.psi.common.core.handler.PlayerPsiHandler;
 
 /** Creative CAD with a twelve-round spell-bullet magazine. */
 public class ItemCreativeCAD extends Item {
@@ -69,8 +69,17 @@ public class ItemCreativeCAD extends Item {
         if (world.isRemote) return cad;
         ItemStack bullet = getBullet(cad, getSelectedSlot(cad));
         Spell spell = ItemSpellBullet.getSpell(bullet);
-        if (spell != null) {
-            world.spawnEntityInWorld(new EntitySpellProjectile(world, player, spell));
+        if (spell != null && bullet.getItem() instanceof ItemSpellBullet) {
+            try {
+                if (!PlayerPsiHandler.spend(player, ItemCAD.getRealCost(null, bullet, spell), null)) {
+                    player.addChatMessage(
+                        new ChatComponentText(EnumChatFormatting.RED + "[Psi] Not enough Psi to cast this spell."));
+                    return cad;
+                }
+                ((ItemSpellBullet) bullet.getItem()).castSpell(bullet, player);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to cast spell bullet", e);
+            }
             return cad;
         }
         player.addChatMessage(

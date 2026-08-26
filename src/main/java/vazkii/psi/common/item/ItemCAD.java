@@ -26,8 +26,8 @@ import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.common.Psi;
 import vazkii.psi.common.core.handler.GuiHandler;
+import vazkii.psi.common.core.handler.PlayerPsiHandler;
 import vazkii.psi.common.core.proxy.CommonProxy;
-import vazkii.psi.common.entity.EntitySpellProjectile;
 import vazkii.psi.common.item.component.ItemCADComponent;
 
 /**
@@ -45,6 +45,7 @@ public class ItemCAD extends Item {
     private static final String TAG_BATTERY = "cadBattery";
     private static final String TAG_BULLETS = "bullets";
     private static final String TAG_SELECTED_SLOT = "selectedSlot";
+    private static final String TAG_STORED_PSI = "storedPsi";
     public static final int MAX_MAGAZINE_SIZE = 12;
     public static final String STAT_MEMORY = "Memory";
 
@@ -87,6 +88,36 @@ public class ItemCAD extends Item {
     public static int getMagazineSize(ItemStack cad) {
         int sockets = getStat(cad, "Sockets");
         return sockets < 0 ? MAX_MAGAZINE_SIZE : Math.min(MAX_MAGAZINE_SIZE, Math.max(0, sockets));
+    }
+
+    public static int getStoredPsi(ItemStack cad) {
+        if (cad == null) return 0;
+        int capacity = getStat(cad, "Overflow");
+        if (capacity < 0) return -1;
+        return cad.hasTagCompound() && cad.getTagCompound()
+            .hasKey(TAG_STORED_PSI) ? Math.min(
+                capacity,
+                cad.getTagCompound()
+                    .getInteger(TAG_STORED_PSI))
+                : 0;
+    }
+
+    public static int consumeStoredPsi(ItemStack cad, int amount) {
+        int stored = getStoredPsi(cad);
+        if (stored < 0) return 0;
+        int used = Math.min(stored, amount);
+        if (!cad.hasTagCompound()) cad.setTagCompound(new NBTTagCompound());
+        cad.getTagCompound()
+            .setInteger(TAG_STORED_PSI, stored - used);
+        return amount - used;
+    }
+
+    public static void regenStoredPsi(ItemStack cad, int amount) {
+        int capacity = getStat(cad, "Overflow");
+        if (capacity < 0) return;
+        if (!cad.hasTagCompound()) cad.setTagCompound(new NBTTagCompound());
+        cad.getTagCompound()
+            .setInteger(TAG_STORED_PSI, Math.min(capacity, getStoredPsi(cad) + amount));
     }
 
     public static ItemStack getBullet(ItemStack cad, int slot) {
@@ -315,21 +346,18 @@ public class ItemCAD extends Item {
         }
 
         try {
-            // Create and shoot projectile
-            EntitySpellProjectile projectile = new EntitySpellProjectile(world, player, spell);
-
-            // Set velocity based on player's look direction
-            double velocity = 1.5;
-            double mx = -Math.sin(Math.toRadians(player.rotationYaw)) * Math.cos(Math.toRadians(player.rotationPitch))
-                * velocity;
-            double my = -Math.sin(Math.toRadians(player.rotationPitch)) * velocity;
-            double mz = Math.cos(Math.toRadians(player.rotationYaw)) * Math.cos(Math.toRadians(player.rotationPitch))
-                * velocity;
-
-            projectile.setThrowableHeading(mx, my, mz, 1.5F, 0.0F);
-
-            // Spawn projectile
-            world.spawnEntityInWorld(projectile);
+            int cost = getRealCost(stack, bullet, spell);
+            if (!PlayerPsiHandler.spend(player, cost, stack)) {
+                player.addChatMessage(
+                    new ChatComponentText(EnumChatFormatting.RED + "[Psi] Not enough Psi to cast this spell."));
+                return stack;
+            }
+            if (bullet != null && bullet.getItem() instanceof ItemSpellBullet) {
+                ((ItemSpellBullet) bullet.getItem()).castSpell(bullet, player);
+            } else {
+                // A spell stored directly on a legacy CAD is a basic bullet.
+                new ItemSpellBullet().castSpell(stack, player);
+            }
 
             // Success feedback
             player.addChatMessage(
@@ -347,6 +375,17 @@ public class ItemCAD extends Item {
         }
 
         return stack;
+    }
+
+    /** Applies the CAD efficiency and the selected bullet's modern cost multiplier. */
+    public static int getRealCost(ItemStack cad, ItemStack bullet, Spell spell) throws SpellCompilationException {
+        int raw = new SpellCompiler().compile(spell).metadata.getStat(EnumSpellStat.COST);
+        int efficiency = getStat(cad, "Efficiency");
+        if (efficiency == -1) return 0;
+        double result = efficiency <= 0 ? raw : raw / (efficiency / 100D);
+        if (bullet != null && bullet.getItem() instanceof ItemSpellBullet)
+            result *= ((ItemSpellBullet) bullet.getItem()).getCostModifier();
+        return (int) result;
     }
 
     @Override
