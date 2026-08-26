@@ -14,12 +14,22 @@ import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import vazkii.psi.client.core.handler.KeybindHandler;
+import vazkii.psi.client.core.handler.LoopcastRenderHandler;
 import vazkii.psi.client.core.handler.PsiHUDHandler;
+import vazkii.psi.client.fx.FXSparkle;
+import vazkii.psi.client.fx.FXWisp;
 import vazkii.psi.client.render.BlockMachineRenderer;
 import vazkii.psi.client.render.RenderItemCAD;
+import vazkii.psi.client.render.entity.RenderSpellCircle;
+import vazkii.psi.client.render.entity.RenderSpellProjectile;
 import vazkii.psi.client.render.tile.RenderTileProgrammer;
 import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.core.proxy.CommonProxy;
+import vazkii.psi.common.entity.EntitySpellCircle;
+import vazkii.psi.common.entity.EntitySpellCharge;
+import vazkii.psi.common.entity.EntitySpellGrenade;
+import vazkii.psi.common.entity.EntitySpellMine;
+import vazkii.psi.common.entity.EntitySpellProjectile;
 
 public class ClientProxy extends CommonProxy {
 
@@ -35,6 +45,11 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileProgrammer.class, new RenderTileProgrammer());
 
         MinecraftForgeClient.registerItemRenderer(CommonProxy.itemCAD, new RenderItemCAD());
+        RenderingRegistry.registerEntityRenderingHandler(EntitySpellCircle.class, new RenderSpellCircle());
+        RenderingRegistry.registerEntityRenderingHandler(EntitySpellProjectile.class, new RenderSpellProjectile());
+        RenderingRegistry.registerEntityRenderingHandler(EntitySpellGrenade.class, new RenderSpellProjectile());
+        RenderingRegistry.registerEntityRenderingHandler(EntitySpellMine.class, new RenderSpellProjectile());
+        RenderingRegistry.registerEntityRenderingHandler(EntitySpellCharge.class, new RenderSpellProjectile());
 
         KeybindHandler handler = new KeybindHandler();
         KeybindHandler.init();
@@ -44,6 +59,7 @@ public class ClientProxy extends CommonProxy {
             .register(handler);
 
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PsiHUDHandler());
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new LoopcastRenderHandler());
     }
 
     @Override
@@ -61,5 +77,35 @@ public class ClientProxy extends CommonProxy {
                     PsiHUDHandler.setPsi(previous, current, maximum);
                 }
             });
+    }
+
+    @Override
+    public void handleLoopcastSync(final int entityId, final boolean loopcasting) {
+        net.minecraft.client.Minecraft.getMinecraft().func_152344_a(new Runnable() {
+            @Override
+            public void run() {
+                LoopcastRenderHandler.setLoopcasting(entityId, loopcasting);
+            }
+        });
+    }
+
+    @Override
+    public void sparkleFX(double x, double y, double z, float r, float g, float b,
+            float motionX, float motionY, float motionZ, float size, int ageMultiplier) {
+        if (ageMultiplier != 0 && net.minecraft.client.Minecraft.getMinecraft().theWorld != null) {
+            net.minecraft.client.Minecraft.getMinecraft().effectRenderer.addEffect(
+                new FXSparkle(net.minecraft.client.Minecraft.getMinecraft().theWorld, x, y, z, size, r, g, b,
+                    ageMultiplier, motionX, motionY, motionZ));
+        }
+    }
+
+    @Override
+    public void wispFX(double x, double y, double z, float r, float g, float b,
+            float size, float motionX, float motionY, float motionZ, float maxAgeMultiplier) {
+        if (maxAgeMultiplier != 0 && net.minecraft.client.Minecraft.getMinecraft().theWorld != null) {
+            net.minecraft.client.Minecraft.getMinecraft().effectRenderer.addEffect(
+                new FXWisp(net.minecraft.client.Minecraft.getMinecraft().theWorld, x, y, z, motionX, motionY, motionZ,
+                    size, r, g, b, maxAgeMultiplier));
+        }
     }
 }

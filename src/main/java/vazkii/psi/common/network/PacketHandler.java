@@ -29,5 +29,6 @@ public class PacketHandler {
             Side.SERVER);
         INSTANCE.registerMessage(PacketCADSelect.Handler.class, PacketCADSelect.class, 2, Side.SERVER);
         INSTANCE.registerMessage(PacketPsiSync.Handler.class, PacketPsiSync.class, 3, Side.CLIENT);
+        INSTANCE.registerMessage(PacketLoopcastSync.Handler.class, PacketLoopcastSync.class, 4, Side.CLIENT);
     }
 }

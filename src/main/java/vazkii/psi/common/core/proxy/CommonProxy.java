@@ -48,6 +48,15 @@ public class CommonProxy {
     /** Client-only proxies receive authoritative Psi-bar updates through this no-op server hook. */
     public void handlePsiSync(int previous, int current, int maximum) {}
 
+    public void handleLoopcastSync(int entityId, boolean loopcasting) {}
+
+    /** Client proxy creates these; the server intentionally has no visual work. */
+    public void sparkleFX(double x, double y, double z, float r, float g, float b,
+            float motionX, float motionY, float motionZ, float size, int ageMultiplier) {}
+
+    public void wispFX(double x, double y, double z, float r, float g, float b,
+            float size, float motionX, float motionY, float motionZ, float maxAgeMultiplier) {}
+
     /** Legacy block renderer ID. The dedicated server uses the vanilla renderer. */
     public int getMachineRenderType() {
         return 0;

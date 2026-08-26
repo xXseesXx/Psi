@@ -12,11 +12,15 @@ import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.api.spell.SpellContext;
+import vazkii.psi.common.Psi;
 
 /**
  * A projectile entity that carries and executes a spell on impact.
  */
 public class EntitySpellProjectile extends EntityThrowable {
+
+    /** Default Psi colour used until CAD colorizers are backported. */
+    protected static final int SPELL_COLOR = 0x13C5FF;
 
     private static final String TAG_CASTER_UUID = "casterUUID";
     private static final String TAG_TIME_ALIVE = "timeAlive";
@@ -57,19 +61,60 @@ public class EntitySpellProjectile extends EntityThrowable {
 
     protected void tickProjectile() {
         super.onUpdate();
+        updateProjectileVisuals();
+    }
 
+    /** Keeps an embedded projectile alive and visual without Throwable's gravity update. */
+    protected void tickStationaryProjectile() {
+        lastTickPosX = prevPosX = posX;
+        lastTickPosY = prevPosY = posY;
+        lastTickPosZ = prevPosZ = posZ;
+        ticksExisted++;
+        updateProjectileVisuals();
+    }
+
+    private void updateProjectileVisuals() {
         timeAlive++;
 
         if (timeAlive > getLiveTime()) {
             setDead();
         }
 
-        // TODO: Add particle trail in future phase
+        if (worldObj.isRemote && !isDead) spawnTrailParticles();
     }
 
     /** Lifetime in ticks; charge and mine bullets override this. */
     public int getLiveTime() {
         return 100;
+    }
+
+    /** Number of sparkle motes emitted each tick, matching the modern projectile family. */
+    public int getParticleCount() {
+        return 5;
+    }
+
+    protected void spawnTrailParticles() {
+        double speed = Math.sqrt(motionX * motionX + motionY * motionY + motionZ * motionZ);
+        double baseX = speed < 1.0E-5D ? 0D : motionX / speed;
+        double baseY = speed < 1.0E-5D ? 0D : motionY / speed;
+        double baseZ = speed < 1.0E-5D ? 0D : motionZ / speed;
+        double distance = 0.15D;
+        if (this instanceof EntitySpellGrenade) {
+            baseY += 1D;
+            distance = 0.05D;
+        }
+        for (int i = 0; i < getParticleCount(); i++) {
+            double vx = baseX + (rand.nextDouble() - 0.5D) * 0.6D;
+            double vy = baseY + (rand.nextDouble() - 0.5D) * 0.6D;
+            double vz = baseZ + (rand.nextDouble() - 0.5D) * 0.6D;
+            double length = Math.sqrt(vx * vx + vy * vy + vz * vz);
+            if (length < 1.0E-5D) continue;
+            float r = ((SPELL_COLOR >> 16) & 255) / 255F;
+            float g = ((SPELL_COLOR >> 8) & 255) / 255F;
+            float b = (SPELL_COLOR & 255) / 255F;
+            Psi.proxy.sparkleFX(posX, posY, posZ, r, g, b,
+                (float) (vx / length * distance), (float) (vy / length * distance), (float) (vz / length * distance), 1.2F, 12);
+        }
     }
 
     @Override

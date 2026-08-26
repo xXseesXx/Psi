@@ -29,8 +29,13 @@ public class EntitySpellMine extends EntitySpellGrenade {
     }
 
     @Override
+    public int getParticleCount() {
+        return 1;
+    }
+
+    @Override
     public void onUpdate() {
-        tickProjectile();
+        tickGrenade();
         if (worldObj.isRemote) return;
         motionX = motionY = motionZ = 0;
         @SuppressWarnings("unchecked")

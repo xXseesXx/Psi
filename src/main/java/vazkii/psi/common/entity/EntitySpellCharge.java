@@ -22,9 +22,13 @@ public class EntitySpellCharge extends EntitySpellGrenade {
     }
 
     @Override
+    public int getParticleCount() {
+        return 2;
+    }
+
+    @Override
     public void onUpdate() {
-        tickProjectile();
-        motionX = motionY = motionZ = 0;
+        tickGrenade();
         if (!worldObj.isRemote && timeAlive >= 6000) setDead();
     }
 
