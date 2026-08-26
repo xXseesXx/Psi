@@ -10,9 +10,9 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
-import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.spell.EnumSpellStat;
+import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.api.spell.piece.PieceTrick;
@@ -21,9 +21,9 @@ import vazkii.psi.client.gui.button.GuiButtonHelp;
 import vazkii.psi.client.gui.button.GuiButtonIO;
 import vazkii.psi.client.gui.widget.PiecePanelWidget;
 import vazkii.psi.client.gui.widget.SideConfigWidget;
+import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
-import vazkii.psi.common.block.tile.TileProgrammer;
 import vazkii.psi.common.lib.LibMisc;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
 
@@ -313,7 +313,8 @@ public class GuiProgrammer extends GuiScreen {
     /** Draws the compiler status and the player's active Casting Assistant Device. */
     private void drawProgrammerStatus(int mouseX, int mouseY) {
         GL11.glColor4f(1F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(TEXTURE);
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
         this.drawTexturedModalRect(guiLeft - 48, guiTop + 5, xSize, 0, 48, 30);
 
         int statusX = guiLeft - 16;
@@ -324,9 +325,12 @@ public class GuiProgrammer extends GuiScreen {
                 programmerTooltip.add("\u00a7a" + net.minecraft.client.resources.I18n.format("psimisc.compiled"));
             } else {
                 programmerTooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("psimisc.errored"));
-                programmerTooltip.add("\u00a77" + net.minecraft.client.resources.I18n.format(compilationError.getMessage()));
+                programmerTooltip
+                    .add("\u00a77" + net.minecraft.client.resources.I18n.format(compilationError.getMessage()));
                 if (compilationError.x >= 0 && compilationError.y >= 0) {
-                    programmerTooltip.add("\u00a77[" + (compilationError.x + 1) + ", " + (compilationError.y + 1) + "]");
+                    programmerTooltip.add(
+                        "\u00a77" + net.minecraft.client.resources.I18n
+                            .format("psi.spellerror.position", compilationError.x + 1, compilationError.y + 1));
                 }
             }
         }
@@ -354,13 +358,15 @@ public class GuiProgrammer extends GuiScreen {
             String limitName = cadStatName(stat);
             // No equipped CAD means no capacity; the creative CAD intentionally
             // reports an unlimited capacity, just like the modern UI.
-            int limit = limitName == null ? -1 : cad == null ? 0
-                : cad.getItem() instanceof ItemCreativeCAD ? -1 : ItemCAD.getStat(cad, limitName);
-            String text = stat == EnumSpellStat.COST ? String.valueOf(value) : value + "/" + (limit < 0 ? "\u221e" : limit);
+            int limit = limitName == null ? -1
+                : cad == null ? 0 : cad.getItem() instanceof ItemCreativeCAD ? -1 : ItemCAD.getStat(cad, limitName);
+            String text = stat == EnumSpellStat.COST ? String.valueOf(value)
+                : value + "/" + (limit < 0 ? "\u221e" : limit);
             int colour = limitName != null && limit >= 0 && value > limit ? 0xFF6666 : 0xFFFFFF;
 
             GL11.glColor4f(1F, 1F, 1F, 1F);
-            this.mc.getTextureManager().bindTexture(TEXTURE);
+            this.mc.getTextureManager()
+                .bindTexture(TEXTURE);
             this.drawTexturedModalRect(statX, statY, (stat.ordinal() + 1) * 12, ySize + 16, 12, 12);
             fontRendererObj.drawString(text, statX + 16, statY + 2, colour);
             if (mouseX >= statX && mouseX < statX + 12 && mouseY >= statY && mouseY < statY + 12) {
@@ -372,18 +378,26 @@ public class GuiProgrammer extends GuiScreen {
     }
 
     private ItemStack getCastingAssistant() {
-        if (cadStack != null && (cadStack.getItem() instanceof ItemCAD || cadStack.getItem() instanceof ItemCreativeCAD)) return cadStack;
+        if (cadStack != null
+            && (cadStack.getItem() instanceof ItemCAD || cadStack.getItem() instanceof ItemCreativeCAD))
+            return cadStack;
         ItemStack held = this.mc.thePlayer == null ? null : this.mc.thePlayer.getHeldItem();
-        return held != null && (held.getItem() instanceof ItemCAD || held.getItem() instanceof ItemCreativeCAD) ? held : null;
+        return held != null && (held.getItem() instanceof ItemCAD || held.getItem() instanceof ItemCreativeCAD) ? held
+            : null;
     }
 
     private String cadStatName(EnumSpellStat stat) {
         switch (stat) {
-            case COMPLEXITY: return "Complexity";
-            case POTENCY: return "Potency";
-            case PROJECTION: return "Projection";
-            case BANDWIDTH: return "Bandwidth";
-            default: return null;
+            case COMPLEXITY:
+                return "Complexity";
+            case POTENCY:
+                return "Potency";
+            case PROJECTION:
+                return "Projection";
+            case BANDWIDTH:
+                return "Bandwidth";
+            default:
+                return null;
         }
     }
 
@@ -810,20 +824,32 @@ public class GuiProgrammer extends GuiScreen {
         java.util.List<String> tooltip = new java.util.ArrayList<String>();
         piece.getTooltip(tooltip);
         if (isShiftKeyDown()) {
-            tooltip.add("\u00a77Parameters:");
+            tooltip.add("");
+            tooltip.add("Output \u00a76" + piece.getEvaluationTypeString());
             for (vazkii.psi.api.spell.SpellParam<?> param : piece.params.values()) {
                 tooltip.add(
-                    "\u00a77- " + net.minecraft.client.resources.I18n.format(param.name)
-                        + ": "
-                        + param.getRequiredTypeString());
+                    (param.canDisable ? "[Input] " : " Input  ") + "\u00a7e"
+                        + net.minecraft.client.resources.I18n.format(param.name)
+                        + "\u00a7e ["
+                        + param.getRequiredTypeString()
+                        + "]");
             }
         } else {
-            tooltip.add("\u00a77Hold \u00a7bSHIFT\u00a77 for more info");
+            tooltip.add(net.minecraft.client.resources.I18n.format("psimisc.shift_for_info"));
         }
-        if (isCtrlKeyDown()) {
-            tooltip.add("\u00a77" + piece.getEvaluationTypeString());
-        } else {
-            tooltip.add("\u00a77Hold \u00a7bCTRL\u00a77 for piece stats");
+        if (piece.hasStatLabels()) {
+            if (isCtrlKeyDown()) {
+                tooltip.add("");
+                for (EnumSpellStat stat : EnumSpellStat.values()) {
+                    vazkii.psi.api.spell.StatLabel label = piece.getDefinedStatLabel(stat);
+                    if (label != null) {
+                        tooltip.add(net.minecraft.client.resources.I18n.format(stat.getName()) + ":");
+                        tooltip.add(" \u00a7e" + label.toString());
+                    }
+                }
+            } else {
+                tooltip.add(net.minecraft.client.resources.I18n.format("psimisc.ctrl_for_stats"));
+            }
         }
         return tooltip;
     }
@@ -950,6 +976,7 @@ public class GuiProgrammer extends GuiScreen {
             // Draw piece icon using texture atlas (icons are 18x18 with transparent borders)
             PieceTextureAtlas.getInstance()
                 .drawPiece(pieceId, btnX, btnY);
+            drawPiecePickerOverlay(pieceId, btnX, btnY, buttonSize);
 
             // Mouse hover uses the exact same sprite as the spell grid, over
             // the icon. The blue keyboard marker above remains behind it.
@@ -989,6 +1016,22 @@ public class GuiProgrammer extends GuiScreen {
         if (hoveredPieceTooltip != null) {
             this.drawHoveringText(hoveredPieceTooltip, mouseX, mouseY, fontRendererObj);
         }
+    }
+
+    /** Draws dynamic piece content that is not part of the static atlas icon. */
+    private void drawPiecePickerOverlay(String pieceId, int x, int y, int size) {
+        if (!"psi:constant_number".equals(pieceId)) return;
+
+        String value = searchField.getText();
+        if (!isNumber(value)) value = "0";
+        if (value.length() > 5) value = value.substring(0, 5);
+        // Picker buttons are 18x18, but the number-piece texture is a 16x16
+        // canvas. Align dynamic text to that canvas, as drawAdditional does
+        // in modern Psi, rather than to the surrounding button cell.
+        PieceTextureAtlas.UVCoords icon = PieceTextureAtlas.getInstance()
+            .getUV(pieceId);
+        int iconWidth = icon == null ? size : icon.width;
+        fontRendererObj.drawString(value, x + (iconWidth - fontRendererObj.getStringWidth(value)) / 2, y + 4, 0xFFFFFF);
     }
 
     /**
@@ -1074,7 +1117,8 @@ public class GuiProgrammer extends GuiScreen {
 
                 // A first trick is a natural, useful name for a new spell. Never
                 // replace a player-entered name, including one restored by undo.
-                if (newPiece instanceof PieceTrick && (editingSpell.name == null || editingSpell.name.trim().isEmpty())) {
+                if (newPiece instanceof PieceTrick && (editingSpell.name == null || editingSpell.name.trim()
+                    .isEmpty())) {
                     String generatedName = net.minecraft.client.resources.I18n.format(newPiece.getUnlocalizedName())
                         .replaceFirst("^Trick:\\s*", "");
                     editingSpell.name = generatedName.length() > 20 ? generatedName.substring(0, 20) : generatedName;
@@ -1379,9 +1423,14 @@ public class GuiProgrammer extends GuiScreen {
             if (programmer != null) {
                 programmer.setSpell(editingSpell);
                 vazkii.psi.common.network.PacketHandler.INSTANCE.sendToServer(
-                    new vazkii.psi.common.network.PacketProgrammerSpellUpdate(programmer.xCoord, programmer.yCoord, programmer.zCoord, editingSpell));
+                    new vazkii.psi.common.network.PacketProgrammerSpellUpdate(
+                        programmer.xCoord,
+                        programmer.yCoord,
+                        programmer.zCoord,
+                        editingSpell));
             } else {
-                vazkii.psi.common.network.PacketHandler.INSTANCE.sendToServer(new vazkii.psi.common.network.PacketSpellUpdate(editingSpell));
+                vazkii.psi.common.network.PacketHandler.INSTANCE
+                    .sendToServer(new vazkii.psi.common.network.PacketSpellUpdate(editingSpell));
             }
 
             System.out.println("[Psi] Synced spell '" + editingSpell.name + "' to server");

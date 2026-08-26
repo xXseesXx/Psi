@@ -9,11 +9,10 @@ import vazkii.psi.common.core.proxy.CommonProxy;
 public final class PsiCreativeTab {
 
     public static final CreativeTabs TAB = new CreativeTabs("psi") {
+
         @Override
         public Item getTabIconItem() {
-            return CommonProxy.itemCADAssemblyIron != null
-                ? CommonProxy.itemCADAssemblyIron
-                : CommonProxy.itemCAD;
+            return CommonProxy.itemCADAssemblyIron != null ? CommonProxy.itemCADAssemblyIron : CommonProxy.itemCAD;
         }
     };
 

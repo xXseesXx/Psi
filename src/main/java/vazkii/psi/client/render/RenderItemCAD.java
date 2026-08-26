@@ -2,6 +2,7 @@ package vazkii.psi.client.render;
 
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.IItemRenderer;
+
 import vazkii.psi.client.model.cad.*;
 import vazkii.psi.common.item.ItemCAD;
 
@@ -26,6 +27,7 @@ public class RenderItemCAD implements IItemRenderer {
 
     @Override
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-        CadRenderer.render(CadModels.cad(), CadMaterial.forAssembly(ItemCAD.getAssemblyId(item)), CadRenderContext.of(type));
+        CadRenderer
+            .render(CadModels.cad(), CadMaterial.forAssembly(ItemCAD.getAssemblyId(item)), CadRenderContext.of(type));
     }
 }

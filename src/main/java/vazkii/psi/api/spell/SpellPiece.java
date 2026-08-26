@@ -88,13 +88,29 @@ public abstract class SpellPiece {
      * For barebones, returns simple type name.
      */
     public String getEvaluationTypeString() {
-        Class<?> evalType = getEvaluationType();
-        String evalStr = evalType == null ? "null" : evalType.getSimpleName();
-        String s = "Type: " + evalStr;
+        String s = getDatatypeName(getEvaluationType());
         if (getPieceType() == EnumPieceType.CONSTANT) {
-            s += " (constant)";
+            s += " " + net.minecraft.client.resources.I18n.format("psimisc.constant");
         }
         return s;
+    }
+
+    /** Returns the localized programmer name for a spell value type. */
+    public static String getDatatypeName(Class<?> type) {
+        String key;
+        if (type == null) key = "null";
+        else if (type == Void.class) key = "void";
+        else if (type == Double.class || type == Float.class
+            || type == Integer.class
+            || type == Long.class
+            || Number.class.isAssignableFrom(type)) key = "number";
+        else if (type == vazkii.psi.api.internal.Vector3.class) key = "vector3";
+        else if (net.minecraft.entity.player.EntityPlayer.class.isAssignableFrom(type)) key = "player";
+        else if (net.minecraft.entity.Entity.class.isAssignableFrom(type)) key = "entity";
+        else if (type == String.class) key = "string";
+        else key = type.getSimpleName()
+            .toLowerCase(java.util.Locale.ROOT);
+        return net.minecraft.client.resources.I18n.format("psi.datatype." + key);
     }
 
     /**
@@ -223,6 +239,23 @@ public abstract class SpellPiece {
     }
 
     /**
+     * Evaluates a constant parameter while compiling metadata. This is the
+     * 1.7.10 equivalent of modern Psi's getParamEvaluation implementation.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getParamEvaluation(SpellParam<?> param) throws SpellCompilationException {
+        SpellParam.Side side = paramSides.get(param);
+        if (side == null || !side.isEnabled()) return null;
+
+        int targetX = x + side.offx;
+        int targetY = y + side.offy;
+        if (!SpellGrid.exists(targetX, targetY)) return null;
+
+        SpellPiece piece = spell.grid.gridData[targetX][targetY];
+        return piece == null || !param.canAccept(piece) ? null : (T) piece.evaluate();
+    }
+
+    /**
      * Gets a stat label for the given stat.
      */
     public StatLabel getStatLabel(EnumSpellStat stat) {
@@ -233,7 +266,17 @@ public abstract class SpellPiece {
      * Sets a stat label.
      */
     public void setStatLabel(EnumSpellStat stat, StatLabel label) {
-        statLabels.put(stat, label);
+        if (label == null) statLabels.remove(stat);
+        else statLabels.put(stat, label);
+    }
+
+    /** Whether this piece exposes formula details in the programmer tooltip. */
+    public boolean hasStatLabels() {
+        return !statLabels.isEmpty();
+    }
+
+    public StatLabel getDefinedStatLabel(EnumSpellStat stat) {
+        return statLabels.get(stat);
     }
 
     // NBT Serialization ============================================================

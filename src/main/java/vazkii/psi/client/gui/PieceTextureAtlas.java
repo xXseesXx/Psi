@@ -34,7 +34,7 @@ public class PieceTextureAtlas {
     private static final int ATLAS_HEIGHT = 256;
 
     private PieceTextureAtlas() {
-        // Icons are loaded when their registered piece is first drawn.  Keeping
+        // Icons are loaded when their registered piece is first drawn. Keeping
         // this dynamic is essential: the programmer registry can contain pieces
         // added after this class was written, including addon pieces.
         atlasImage = new BufferedImage(ATLAS_WIDTH, ATLAS_HEIGHT, BufferedImage.TYPE_INT_ARGB);
@@ -79,10 +79,14 @@ public class PieceTextureAtlas {
         }
         try {
             ResourceLocation key = new ResourceLocation(pieceId);
-            ResourceLocation texture = new ResourceLocation(key.getResourceDomain(),
+            ResourceLocation texture = new ResourceLocation(
+                key.getResourceDomain(),
                 "textures/spell/" + key.getResourcePath() + ".png");
-            BufferedImage icon = ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(texture)
-                .getInputStream());
+            BufferedImage icon = ImageIO.read(
+                Minecraft.getMinecraft()
+                    .getResourceManager()
+                    .getResource(texture)
+                    .getInputStream());
             if (icon == null) {
                 return;
             }
@@ -98,8 +102,14 @@ public class PieceTextureAtlas {
 
             // DynamicTexture copies the BufferedImage only in its constructor.
             // Subsequent stitches must write to its backing pixel array directly.
-            icon.getRGB(0, 0, icon.getWidth(), icon.getHeight(), atlasTexture.getTextureData(),
-                nextY * ATLAS_WIDTH + nextX, ATLAS_WIDTH);
+            icon.getRGB(
+                0,
+                0,
+                icon.getWidth(),
+                icon.getHeight(),
+                atlasTexture.getTextureData(),
+                nextY * ATLAS_WIDTH + nextX,
+                ATLAS_WIDTH);
 
             float u0 = (float) nextX / ATLAS_WIDTH;
             float v0 = (float) nextY / ATLAS_HEIGHT;

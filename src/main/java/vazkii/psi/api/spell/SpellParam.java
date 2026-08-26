@@ -103,11 +103,9 @@ public abstract class SpellParam<T> {
      * For barebones, returns a simple type name.
      */
     public String getRequiredTypeString() {
-        Class<T> evalType = getRequiredType();
-        String evalStr = evalType == null ? "null" : evalType.getSimpleName();
-        String s = "Type: " + evalStr;
+        String s = SpellPiece.getDatatypeName(getRequiredType());
         if (requiresConstant()) {
-            s += " (constant)";
+            s += " " + net.minecraft.client.resources.I18n.format("psimisc.constant");
         }
         return s;
     }

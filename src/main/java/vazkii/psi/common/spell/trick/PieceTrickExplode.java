@@ -7,6 +7,7 @@
  */
 package vazkii.psi.common.spell.trick;
 
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
 import vazkii.psi.api.internal.Vector3;
@@ -32,14 +33,20 @@ public class PieceTrickExplode extends PieceTrick {
     public SpellParam<Double> power;
 
     private static final double MIN_POWER = 0.5;
-    private static final double MAX_POWER = 10.0;
-    private static final double DEFAULT_POWER = 3.0;
 
     public PieceTrickExplode(Spell spell) {
         super(spell);
-        // Stats based on default power of 3.0: 3.0 * 70 = 210, 3.0 * 210 = 630
-        setStatLabel(EnumSpellStat.POTENCY, new StatLabel(210));
-        setStatLabel(EnumSpellStat.COST, new StatLabel(630));
+        String powerName = StatCollector.translateToLocal(SpellParam.GENERIC_NAME_POWER);
+        setStatLabel(
+            EnumSpellStat.POTENCY,
+            new StatLabel(powerName).max(MIN_POWER)
+                .mul(70)
+                .floor());
+        setStatLabel(
+            EnumSpellStat.COST,
+            new StatLabel(powerName).max(MIN_POWER)
+                .mul(210)
+                .floor());
     }
 
     @Override
@@ -52,9 +59,14 @@ public class PieceTrickExplode extends PieceTrick {
     public void addToMetadata(SpellMetadata meta) throws SpellCompilationException {
         super.addToMetadata(meta);
 
-        // Barebones: use fixed stats for default power of 3.0
-        meta.addStat(EnumSpellStat.POTENCY, 210);
-        meta.addStat(EnumSpellStat.COST, 630);
+        Double powerVal = this.<Double>getParamEvaluation(power);
+        if (powerVal == null || powerVal.doubleValue() <= 0) {
+            throw new SpellCompilationException(SpellCompilationException.NON_POSITIVE_VALUE, x, y);
+        }
+
+        powerVal = Math.max(MIN_POWER, powerVal.doubleValue());
+        meta.addStat(EnumSpellStat.POTENCY, (int) (powerVal.doubleValue() * 70));
+        meta.addStat(EnumSpellStat.COST, (int) (powerVal.doubleValue() * 210));
     }
 
     @Override
@@ -70,12 +82,6 @@ public class PieceTrickExplode extends PieceTrick {
         }
 
         Double powerVal = this.getParamValue(context, power);
-        if (powerVal == null) {
-            powerVal = DEFAULT_POWER;
-        }
-
-        // Clamp power to safe range
-        powerVal = Math.max(MIN_POWER, Math.min(MAX_POWER, powerVal));
 
         World world = context.caster.worldObj;
 

@@ -1,11 +1,12 @@
 package vazkii.psi.client.render;
 
-import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
+
+import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import vazkii.psi.common.block.BlockCADAssembler;
 import vazkii.psi.common.block.BlockProgrammer;
 
@@ -14,17 +15,19 @@ import vazkii.psi.common.block.BlockProgrammer;
  * The spell programmer's changing spell-grid display is intentionally not rendered.
  */
 public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler {
+
     private static final double U = 1D / 16D;
     // [support (NW, NE, SE, SW)][face (N, E, S, W)][u1, v1, u2, v2]
     private static final int[][][] SUPPORT_UVS = {
         { { 4, 7, 0, 11 }, { 7, 7, 3, 11 }, { 3, 7, 7, 11 }, { 0, 7, 4, 11 } },
         { { 0, 7, 4, 11 }, { 4, 7, 0, 11 }, { 7, 7, 3, 11 }, { 3, 7, 7, 11 } },
         { { 3, 7, 7, 11 }, { 0, 7, 4, 11 }, { 4, 7, 0, 11 }, { 7, 7, 3, 11 } },
-        { { 7, 7, 3, 11 }, { 3, 7, 7, 11 }, { 0, 7, 4, 11 }, { 4, 7, 0, 11 } }
-    };
+        { { 7, 7, 3, 11 }, { 3, 7, 7, 11 }, { 0, 7, 4, 11 }, { 4, 7, 0, 11 } } };
     private final int renderId;
 
-    public BlockMachineRenderer(int renderId) { this.renderId = renderId; }
+    public BlockMachineRenderer(int renderId) {
+        this.renderId = renderId;
+    }
 
     @Override
     public void renderInventoryBlock(Block block, int metadata, int modelId, RenderBlocks renderer) {
@@ -39,7 +42,8 @@ public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler 
     }
 
     @Override
-    public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId, RenderBlocks renderer) {
+    public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId,
+        RenderBlocks renderer) {
         if (!(block instanceof BlockProgrammer) && !(block instanceof BlockCADAssembler)) return false;
         int facing = world.getBlockMetadata(x, y, z) & 3;
         renderer.uvRotateTop = facing;
@@ -74,7 +78,8 @@ public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler 
     }
 
     /** Renders the four explicitly mapped side faces from the Blockbench model. */
-    private void renderSupport(IBlockAccess world, Block block, int x, int y, int z, int modelX, int modelZ, int[][] uv) {
+    private void renderSupport(IBlockAccess world, Block block, int x, int y, int z, int modelX, int modelZ,
+        int[][] uv) {
         double minX = x + modelX * U, maxX = minX + 4 * U;
         double minY = y + 5 * U, maxY = y + 9 * U;
         double minZ = z + modelZ * U, maxZ = minZ + 4 * U;
@@ -129,15 +134,35 @@ public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler 
         t.addVertexWithUV(x, y, z + 1D, i.getInterpolatedU(0), i.getInterpolatedV(16));
     }
 
-    private void faceZNeg(Tessellator t, IIcon i, double minX, double minY, double z, double maxX, double maxY, int[] uv) { face(t, i, minX, maxY, z, maxX, maxY, z, maxX, minY, z, minX, minY, z, uv, .8F); }
-    private void faceXPos(Tessellator t, IIcon i, double x, double minY, double minZ, double maxY, double maxZ, int[] uv) { face(t, i, x, maxY, minZ, x, maxY, maxZ, x, minY, maxZ, x, minY, minZ, uv, .6F); }
-    private void faceZPos(Tessellator t, IIcon i, double minX, double minY, double z, double maxX, double maxY, int[] uv) { face(t, i, maxX, maxY, z, minX, maxY, z, minX, minY, z, maxX, minY, z, uv, .8F); }
-    private void faceXNeg(Tessellator t, IIcon i, double x, double minY, double minZ, double maxY, double maxZ, int[] uv) { face(t, i, x, maxY, maxZ, x, maxY, minZ, x, minY, minZ, x, minY, maxZ, uv, .6F); }
-    private void face(Tessellator t, IIcon i, double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double x4, double y4, double z4, int[] uv, float shade) {
-        double u1 = i.getInterpolatedU(uv[0]), v1 = i.getInterpolatedV(uv[1]), u2 = i.getInterpolatedU(uv[2]), v2 = i.getInterpolatedV(uv[3]);
+    private void faceZNeg(Tessellator t, IIcon i, double minX, double minY, double z, double maxX, double maxY,
+        int[] uv) {
+        face(t, i, minX, maxY, z, maxX, maxY, z, maxX, minY, z, minX, minY, z, uv, .8F);
+    }
+
+    private void faceXPos(Tessellator t, IIcon i, double x, double minY, double minZ, double maxY, double maxZ,
+        int[] uv) {
+        face(t, i, x, maxY, minZ, x, maxY, maxZ, x, minY, maxZ, x, minY, minZ, uv, .6F);
+    }
+
+    private void faceZPos(Tessellator t, IIcon i, double minX, double minY, double z, double maxX, double maxY,
+        int[] uv) {
+        face(t, i, maxX, maxY, z, minX, maxY, z, minX, minY, z, maxX, minY, z, uv, .8F);
+    }
+
+    private void faceXNeg(Tessellator t, IIcon i, double x, double minY, double minZ, double maxY, double maxZ,
+        int[] uv) {
+        face(t, i, x, maxY, maxZ, x, maxY, minZ, x, minY, minZ, x, minY, maxZ, uv, .6F);
+    }
+
+    private void face(Tessellator t, IIcon i, double x1, double y1, double z1, double x2, double y2, double z2,
+        double x3, double y3, double z3, double x4, double y4, double z4, int[] uv, float shade) {
+        double u1 = i.getInterpolatedU(uv[0]), v1 = i.getInterpolatedV(uv[1]), u2 = i.getInterpolatedU(uv[2]),
+            v2 = i.getInterpolatedV(uv[3]);
         t.setColorOpaque_F(shade, shade, shade);
-        t.addVertexWithUV(x1, y1, z1, u2, v1); t.addVertexWithUV(x2, y2, z2, u1, v1);
-        t.addVertexWithUV(x3, y3, z3, u1, v2); t.addVertexWithUV(x4, y4, z4, u2, v2);
+        t.addVertexWithUV(x1, y1, z1, u2, v1);
+        t.addVertexWithUV(x2, y2, z2, u1, v1);
+        t.addVertexWithUV(x3, y3, z3, u1, v2);
+        t.addVertexWithUV(x4, y4, z4, u2, v2);
     }
 
     private void setRenderingBase(Block block, boolean renderingBase) {
@@ -152,12 +177,14 @@ public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler 
         renderPart(block, renderer, 2 * U, 5 * U, 10 * U, 6 * U, 9 * U, 14 * U, metadata);
     }
 
-    private void renderPart(Block block, RenderBlocks renderer, int x, int y, int z, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+    private void renderPart(Block block, RenderBlocks renderer, int x, int y, int z, double minX, double minY,
+        double minZ, double maxX, double maxY, double maxZ) {
         renderer.setRenderBounds(minX, minY, minZ, maxX, maxY, maxZ);
         renderer.renderStandardBlock(block, x, y, z);
     }
 
-    private void renderPart(Block block, RenderBlocks renderer, double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int metadata) {
+    private void renderPart(Block block, RenderBlocks renderer, double minX, double minY, double minZ, double maxX,
+        double maxY, double maxZ, int metadata) {
         renderer.setRenderBounds(minX, minY, minZ, maxX, maxY, maxZ);
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
@@ -176,6 +203,13 @@ public final class BlockMachineRenderer implements ISimpleBlockRenderingHandler 
         tessellator.draw();
     }
 
-    @Override public boolean shouldRender3DInInventory(int modelId) { return true; }
-    @Override public int getRenderId() { return renderId; }
+    @Override
+    public boolean shouldRender3DInInventory(int modelId) {
+        return true;
+    }
+
+    @Override
+    public int getRenderId() {
+        return renderId;
+    }
 }

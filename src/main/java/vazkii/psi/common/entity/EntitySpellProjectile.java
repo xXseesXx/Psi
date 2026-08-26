@@ -89,6 +89,10 @@ public class EntitySpellProjectile extends EntityThrowable {
             // Execute the spell
             try {
                 compiledSpell.execute(context);
+            } catch (vazkii.psi.api.spell.SpellRuntimeException e) {
+                caster.addChatMessage(
+                    new net.minecraft.util.ChatComponentText(
+                        net.minecraft.util.EnumChatFormatting.RED + e.getTranslatedMessage()));
             } catch (Exception e) {
                 System.err.println("[Psi] Error executing spell from projectile: " + e.getMessage());
                 e.printStackTrace();

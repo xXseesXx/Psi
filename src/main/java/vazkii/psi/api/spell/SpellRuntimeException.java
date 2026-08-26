@@ -51,7 +51,6 @@ public class SpellRuntimeException extends Exception {
      * For barebones, returns the raw key.
      */
     public String getTranslatedMessage() {
-        // TODO: Implement I18n.format(getMessage(), arguments) when localization is added
-        return getMessage();
+        return net.minecraft.util.StatCollector.translateToLocalFormatted(getMessage(), arguments);
     }
 }

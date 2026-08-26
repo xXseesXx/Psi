@@ -28,7 +28,7 @@ import vazkii.psi.api.spell.piece.PieceTrick;
 public class SpellCompiler {
 
     private CompiledSpell compiled;
-    private Set<SpellPiece> visited;
+    private Set<SpellPiece> visiting;
 
     /**
      * Compile a spell from its grid structure.
@@ -48,7 +48,7 @@ public class SpellCompiler {
 
         // Initialize compilation state
         compiled = new CompiledSpell(spell);
-        visited = new HashSet<>();
+        visiting = new HashSet<>();
 
         // Find all trick pieces (entry points)
         List<SpellPiece> tricks = findTricks(spell);
@@ -78,11 +78,6 @@ public class SpellCompiler {
      * Uses depth-first traversal to ensure dependencies are compiled before dependents.
      */
     private void compilePiece(SpellPiece piece) throws SpellCompilationException {
-        // Check for infinite loops
-        if (!visited.add(piece)) {
-            throw new SpellCompilationException(SpellCompilationException.INFINITE_LOOP, piece.x, piece.y);
-        }
-
         // If already compiled, move to top of execution stack
         if (compiled.actionMap.containsKey(piece)) {
             CompiledSpell.Action action = compiled.actionMap.get(piece);
@@ -91,42 +86,52 @@ public class SpellCompiler {
             return;
         }
 
-        // Add piece stats to metadata
-        piece.addToMetadata(compiled.metadata);
-
-        // Compile all parameter dependencies first (depth-first)
-        for (Map.Entry<SpellParam<?>, SpellParam.Side> entry : piece.paramSides.entrySet()) {
-            SpellParam<?> param = entry.getKey();
-            SpellParam.Side side = entry.getValue();
-
-            // Check if parameter is disabled (optional parameter not set)
-            if (!side.isEnabled()) {
-                if (!param.canDisable) {
-                    throw new SpellCompilationException(SpellCompilationException.UNSET_PARAM, piece.x, piece.y);
-                }
-                continue;
-            }
-
-            // Get piece at this side
-            SpellPiece paramPiece = getPieceAtSide(piece.x, piece.y, side);
-
-            if (paramPiece == null) {
-                throw new SpellCompilationException(SpellCompilationException.NULL_PARAM, piece.x, piece.y);
-            }
-
-            // Validate parameter type
-            if (!param.canAccept(paramPiece)) {
-                throw new SpellCompilationException(SpellCompilationException.INVALID_PARAM, piece.x, piece.y);
-            }
-
-            // Recursively compile the parameter piece
-            compilePiece(paramPiece);
+        // Only pieces currently on this traversal path constitute a loop.
+        // Reusing one constant or operator in multiple branches is valid.
+        if (!visiting.add(piece)) {
+            throw new SpellCompilationException(SpellCompilationException.INFINITE_LOOP, piece.x, piece.y);
         }
 
-        // Create action for this piece and add to execution list
-        CompiledSpell.Action action = compiled.new Action(piece);
-        compiled.actions.add(action);
-        compiled.actionMap.put(piece, action);
+        try {
+            // Add piece stats to metadata
+            piece.addToMetadata(compiled.metadata);
+
+            // Compile all parameter dependencies first (depth-first)
+            for (Map.Entry<SpellParam<?>, SpellParam.Side> entry : piece.paramSides.entrySet()) {
+                SpellParam<?> param = entry.getKey();
+                SpellParam.Side side = entry.getValue();
+
+                // Check if parameter is disabled (optional parameter not set)
+                if (!side.isEnabled()) {
+                    if (!param.canDisable) {
+                        throw new SpellCompilationException(SpellCompilationException.UNSET_PARAM, piece.x, piece.y);
+                    }
+                    continue;
+                }
+
+                // Get piece at this side
+                SpellPiece paramPiece = getPieceAtSide(piece.x, piece.y, side);
+
+                if (paramPiece == null) {
+                    throw new SpellCompilationException(SpellCompilationException.NULL_PARAM, piece.x, piece.y);
+                }
+
+                // Validate parameter type
+                if (!param.canAccept(paramPiece)) {
+                    throw new SpellCompilationException(SpellCompilationException.INVALID_PARAM, piece.x, piece.y);
+                }
+
+                // Recursively compile the parameter piece
+                compilePiece(paramPiece);
+            }
+
+            // Create action for this piece and add to execution list
+            CompiledSpell.Action action = compiled.new Action(piece);
+            compiled.actions.add(action);
+            compiled.actionMap.put(piece, action);
+        } finally {
+            visiting.remove(piece);
+        }
     }
 
     /**
