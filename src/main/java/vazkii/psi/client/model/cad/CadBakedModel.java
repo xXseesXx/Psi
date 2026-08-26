@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.util.ResourceLocation;
+
 /** Immutable, render-ready CAD geometry. */
 public final class CadBakedModel {
 
@@ -34,4 +36,21 @@ public final class CadBakedModel {
         }
         return false;
     }
+
+    private static volatile CadBakedModel creative;
+
+    public static CadBakedModel creative() {
+        CadBakedModel result = creative;
+        if (result == null) {
+            synchronized (CadModels.class) {
+                if (creative == null) {
+                    creative = CadModelBaker
+                        .bake(CadModelLoader.load(new ResourceLocation("psi", "models/item/cad_creative.json")));
+                }
+                result = creative;
+            }
+        }
+        return result;
+    }
+
 }

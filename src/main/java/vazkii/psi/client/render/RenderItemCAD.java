@@ -25,6 +25,7 @@ public class RenderItemCAD implements IItemRenderer {
         if (type == ItemRenderType.ENTITY) {
             return helper == ItemRendererHelper.ENTITY_BOBBING || helper == ItemRendererHelper.ENTITY_ROTATION;
         }
+
         return helper == ItemRendererHelper.EQUIPPED_BLOCK || helper == ItemRendererHelper.INVENTORY_BLOCK
             || helper == ItemRendererHelper.BLOCK_3D;
     }
@@ -33,7 +34,23 @@ public class RenderItemCAD implements IItemRenderer {
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
         String assembly = ItemCAD.getAssemblyId(item);
 
-        CadBakedModel model = "cad_assembly_iron".equals(assembly) ? CadModels.iron() : CadModels.cad();
+        CadBakedModel model;
+
+        if ("cad_assembly_iron".equals(assembly)) {
+            model = CadModels.iron();
+        } else if ("cad_assembly_gold".equals(assembly)) {
+            model = CadModels.gold();
+        } else if ("cad_assembly_psimetal".equals(assembly)) {
+            model = CadModels.psimetal();
+        } else if ("cad_assembly_ebony_psimetal".equals(assembly)) {
+            model = CadModels.ebonyPsimental();
+        } else if ("cad_assembly_ivory_psimetal".equals(assembly)) {
+            model = CadModels.ivoryPsimental();
+        } else if ("cad_assembly_creative".equals(assembly)) {
+            model = CadModels.creative();
+        } else {
+            model = CadModels.cad();
+        }
 
         CadRenderer
             .render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), ItemCAD.getSpellColor(item));
