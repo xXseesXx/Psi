@@ -60,12 +60,16 @@ public class EntitySpellProjectile extends EntityThrowable {
 
         timeAlive++;
 
-        // Despawn after 5 seconds (100 ticks)
-        if (timeAlive > 100) {
+        if (timeAlive > getLiveTime()) {
             setDead();
         }
 
         // TODO: Add particle trail in future phase
+    }
+
+    /** Lifetime in ticks; charge and mine bullets override this. */
+    public int getLiveTime() {
+        return 100;
     }
 
     @Override

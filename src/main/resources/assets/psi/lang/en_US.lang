@@ -3,8 +3,8 @@
 # Misc
 psimisc.config=Config
 psimisc.name=Name
-psimisc.compiled=Compiled
-psimisc.errored=Compilation Error
+psimisc.compiled=Compilation Successful
+psimisc.errored=Compilation Errored
 itemGroup.psi=Psi
 psimisc.shift_for_info=§7Hold §bSHIFT§7 for more info
 psimisc.ctrl_for_stats=§7Hold §bCTRL§7 for piece stats

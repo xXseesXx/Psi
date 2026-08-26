@@ -24,6 +24,11 @@ public class EntitySpellMine extends EntitySpellGrenade {
     }
 
     @Override
+    public int getLiveTime() {
+        return 6000;
+    }
+
+    @Override
     public void onUpdate() {
         tickProjectile();
         if (worldObj.isRemote) return;

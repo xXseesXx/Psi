@@ -30,6 +30,10 @@ public class PlayerPsiHandler {
     }
 
     public static boolean spend(EntityPlayer player, int cost, ItemStack cad) {
+        return spend(player, cost, cad, true);
+    }
+
+    public static boolean spend(EntityPlayer player, int cost, ItemStack cad, boolean applyCooldown) {
         int current = get(player);
         int overflow = cad != null && cad.getItem() instanceof ItemCAD ? ItemCAD.getStoredPsi(cad) : 0;
         if (overflow < 0) overflow = cost;
@@ -37,7 +41,7 @@ public class PlayerPsiHandler {
         int remainder = Math.max(0, cost - current);
         set(player, Math.max(0, current - cost));
         if (remainder > 0) ItemCAD.consumeStoredPsi(cad, remainder);
-        data(player).setInteger(REGEN_COOLDOWN, CAST_REGEN_DELAY);
+        if (applyCooldown) data(player).setInteger(REGEN_COOLDOWN, CAST_REGEN_DELAY);
         return true;
     }
 

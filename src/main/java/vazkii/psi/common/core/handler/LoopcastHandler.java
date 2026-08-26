@@ -40,7 +40,7 @@ public class LoopcastHandler {
         }
         if (++cast.ticks % 5 != 0) return;
         try {
-            if (!new ItemLoopcastSpellBullet().castSpellNow(cast.bullet, event.player, cast.iterations++))
+            if (!new ItemLoopcastSpellBullet().castSpellNow(cast.bullet, event.player, cast.iterations++, false))
                 ACTIVE.remove(event.player.getUniqueID());
         } catch (Exception ignored) {
             ACTIVE.remove(event.player.getUniqueID());

@@ -23,12 +23,18 @@ public class ItemLoopcastSpellBullet extends ItemSpellBullet {
     }
 
     public boolean castSpellNow(ItemStack stack, EntityPlayer caster, int index) throws Exception {
+        return castSpellNow(stack, caster, index, true);
+    }
+
+    public boolean castSpellNow(ItemStack stack, EntityPlayer caster, int index, boolean applyCooldown)
+        throws Exception {
         Spell spell = getSpell(stack);
         if (spell == null) return false;
         CompiledSpell compiled = new SpellCompiler().compile(spell);
         ItemStack cad = caster.getHeldItem();
         if (cad != null && cad.getItem() instanceof ItemCAD
-            && !PlayerPsiHandler.spend(caster, ItemCAD.getRealCost(cad, stack, spell), cad)) return false;
+            && !PlayerPsiHandler.spend(caster, ItemCAD.getRealCost(cad, stack, spell), cad, applyCooldown))
+            return false;
         compiled.execute(
             new SpellContext().setPlayer(caster)
                 .setSpell(spell)

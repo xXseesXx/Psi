@@ -17,6 +17,11 @@ public class EntitySpellCharge extends EntitySpellGrenade {
     }
 
     @Override
+    public int getLiveTime() {
+        return 6000;
+    }
+
+    @Override
     public void onUpdate() {
         tickProjectile();
         motionX = motionY = motionZ = 0;
