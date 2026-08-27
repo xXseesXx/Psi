@@ -62,11 +62,8 @@ public class HUDHandler {
         // 1.21.1's HUD_ITEM is its own render layer, independent of the psi bar - so this
         // fires for any held item implementing IHUDItem before the CAD check below can bail.
         if (held != null && held.getItem() instanceof IHUDItem) {
-            ((IHUDItem) held.getItem()).drawHUD(
-                event.partialTicks,
-                resolution.getScaledWidth(),
-                resolution.getScaledHeight(),
-                held);
+            ((IHUDItem) held.getItem())
+                .drawHUD(event.partialTicks, resolution.getScaledWidth(), resolution.getScaledHeight(), held);
         }
 
         if (held == null || !(held.getItem() instanceof ICAD)) {
@@ -204,11 +201,8 @@ public class HUDHandler {
             bottomTextY = minimumBottomY;
         }
 
-        mc.fontRenderer.drawStringWithShadow(
-            overflow,
-            x + 1 - mc.fontRenderer.getStringWidth(overflow),
-            bottomTextY,
-            psiColor);
+        mc.fontRenderer
+            .drawStringWithShadow(overflow, x + 1 - mc.fontRenderer.getStringWidth(overflow), bottomTextY, psiColor);
 
         GL11.glColor4f(1F, 1F, 1F, 1F);
         GL11.glDisable(GL11.GL_BLEND);

@@ -53,10 +53,16 @@ public abstract class ItemCADComponent extends Item implements ICADComponent {
         Integer value = stats.get(stat.name());
         if (value != null) return value.intValue();
 
-        value = stats.get(stat.name().toLowerCase());
+        value = stats.get(
+            stat.name()
+                .toLowerCase());
         if (value != null) return value.intValue();
 
-        String displayName = stat.name().substring(0, 1) + stat.name().substring(1).toLowerCase();
+        String displayName = stat.name()
+            .substring(0, 1)
+            + stat.name()
+                .substring(1)
+                .toLowerCase();
         value = stats.get(displayName);
         return value == null ? 0 : value.intValue();
     }
@@ -76,9 +82,10 @@ public abstract class ItemCADComponent extends Item implements ICADComponent {
 
         tooltip.add(EnumChatFormatting.GREEN + "Component Type" + EnumChatFormatting.GRAY + ": " + componentType);
         for (Map.Entry<String, Integer> stat : stats.entrySet()) {
-            String value = stat.getValue().intValue() == -1
-                ? "∞"
-                : stat.getValue().toString();
+            String value = stat.getValue()
+                .intValue() == -1 ? "∞"
+                    : stat.getValue()
+                        .toString();
             tooltip.add(" " + EnumChatFormatting.AQUA + stat.getKey() + EnumChatFormatting.GRAY + ": " + value);
         }
     }

@@ -6,6 +6,7 @@ import java.util.Locale;
  * An enum defining all CAD stats and what components provide them.
  */
 public enum EnumCADStat {
+
     EFFICIENCY(EnumCADComponent.ASSEMBLY),
     POTENCY(EnumCADComponent.ASSEMBLY),
     COMPLEXITY(EnumCADComponent.CORE),

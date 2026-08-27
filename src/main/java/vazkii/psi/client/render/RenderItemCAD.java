@@ -56,6 +56,7 @@ public class RenderItemCAD implements IItemRenderer {
         // item.getItem() is always an ICAD here - this renderer is only ever registered for CAD items.
         ICAD cad = (ICAD) item.getItem();
 
-        CadRenderer.render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), cad.getSpellColor(item));
+        CadRenderer
+            .render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), cad.getSpellColor(item));
     }
 }

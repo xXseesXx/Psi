@@ -1,11 +1,10 @@
 package vazkii.psi.api.cad;
 
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.SpellRuntimeException;
-//import vazkii.psi.api.spell.piece.PieceCraftingTrick;
+// import vazkii.psi.api.spell.piece.PieceCraftingTrick;
 
 /**
  * Base interface for a CAD.
@@ -26,11 +25,9 @@ public interface ICAD {
 
     int getMemorySize(ItemStack stack);
 
-    void setStoredVector(ItemStack stack, int memorySlot, Vector3 vec)
-            throws SpellRuntimeException;
+    void setStoredVector(ItemStack stack, int memorySlot, Vector3 vec) throws SpellRuntimeException;
 
-    Vector3 getStoredVector(ItemStack stack, int memorySlot)
-            throws SpellRuntimeException;
+    Vector3 getStoredVector(ItemStack stack, int memorySlot) throws SpellRuntimeException;
 
     int getTime(ItemStack stack);
 
@@ -38,5 +35,5 @@ public interface ICAD {
 
     int getSpellColor(ItemStack stack);
 
-    //boolean craft(ItemStack cad, EntityPlayer player, PieceCraftingTrick trick);
+    // boolean craft(ItemStack cad, EntityPlayer player, PieceCraftingTrick trick);
 }

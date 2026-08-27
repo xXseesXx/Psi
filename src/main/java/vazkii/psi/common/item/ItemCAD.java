@@ -23,21 +23,19 @@ import vazkii.psi.api.cad.EnumCADComponent;
 import vazkii.psi.api.cad.EnumCADStat;
 import vazkii.psi.api.cad.ICAD;
 import vazkii.psi.api.cad.ICADColorizer;
-import vazkii.psi.api.cad.ICADData;
-import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.internal.Vector3;
+import vazkii.psi.api.spell.CompiledSpell;
 import vazkii.psi.api.spell.EnumSpellStat;
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
 import vazkii.psi.api.spell.SpellRuntimeException;
-import vazkii.psi.api.spell.piece.PieceCraftingTrick;
 import vazkii.psi.common.Psi;
 import vazkii.psi.common.core.handler.GuiHandler;
 import vazkii.psi.common.core.handler.PlayerPsiHandler;
+import vazkii.psi.common.core.handler.capability.CADData;
 import vazkii.psi.common.core.proxy.CommonProxy;
 import vazkii.psi.common.item.component.ItemCADComponent;
-import vazkii.psi.common.core.handler.capability.CADData;
 
 /**
  * CAD (Computer-Aided Design) Assembly - stores and casts spells as projectiles.
@@ -73,7 +71,7 @@ public class ItemCAD extends Item implements ICAD {
     }
 
     public static ItemStack createCAD(ItemStack assembly, ItemStack core, ItemStack socket, ItemStack battery,
-                                      ItemStack colorizer) {
+        ItemStack colorizer) {
         ItemStack cad = new ItemStack(CommonProxy.itemCAD);
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString(TAG_ASSEMBLY, componentName(assembly));
@@ -88,7 +86,7 @@ public class ItemCAD extends Item implements ICAD {
     public static ItemStack getColorizer(ItemStack cad) {
         if (cad == null || !cad.hasTagCompound()
             || !cad.getTagCompound()
-            .hasKey(TAG_COLORIZER))
+                .hasKey(TAG_COLORIZER))
             return null;
         ItemStack colorizer = ItemStack.loadItemStackFromNBT(
             cad.getTagCompound()
@@ -133,7 +131,7 @@ public class ItemCAD extends Item implements ICAD {
         ItemCADComponent part = component(cad, componentKey);
         Integer value = part == null ? null
             : part.getStats()
-            .get(stat);
+                .get(stat);
         return value == null ? 0 : value.intValue();
     }
 
@@ -148,10 +146,10 @@ public class ItemCAD extends Item implements ICAD {
         if (capacity < 0) return -1;
         return cad.hasTagCompound() && cad.getTagCompound()
             .hasKey(TAG_STORED_PSI) ? Math.min(
-            capacity,
-            cad.getTagCompound()
-                .getInteger(TAG_STORED_PSI))
-            : 0;
+                capacity,
+                cad.getTagCompound()
+                    .getInteger(TAG_STORED_PSI))
+                : 0;
     }
 
     public static int consumeStoredPsi(ItemStack cad, int amount) {
@@ -204,11 +202,11 @@ public class ItemCAD extends Item implements ICAD {
         int size = getMagazineSize(cad);
         return size == 0 || cad == null || !cad.hasTagCompound() ? 0
             : Math.max(
-            0,
-            Math.min(
-                size - 1,
-                cad.getTagCompound()
-                    .getInteger(TAG_SELECTED_SLOT)));
+                0,
+                Math.min(
+                    size - 1,
+                    cad.getTagCompound()
+                        .getInteger(TAG_SELECTED_SLOT)));
     }
 
     /** Returns the installed Assembly id used by the client CAD model renderer. */
@@ -224,7 +222,6 @@ public class ItemCAD extends Item implements ICAD {
         cad.getTagCompound()
             .setInteger(TAG_SELECTED_SLOT, Math.max(0, Math.min(size - 1, slot)));
     }
-
 
     @Override
     public ItemStack getComponentInSlot(ItemStack stack, EnumCADComponent type) {
@@ -260,10 +257,8 @@ public class ItemCAD extends Item implements ICAD {
         if (stack == null || stat == null) return 0;
 
         ItemStack componentStack = getComponentInSlot(stack, stat.getSourceType());
-        if (componentStack != null
-            && componentStack.getItem() instanceof ItemCADComponent) {
-            return ((ItemCADComponent) componentStack.getItem())
-                .getCADStatValue(componentStack, stat);
+        if (componentStack != null && componentStack.getItem() instanceof ItemCADComponent) {
+            return ((ItemCADComponent) componentStack.getItem()).getCADStatValue(componentStack, stat);
         }
 
         return getStat(stack, statName(stat));
@@ -271,7 +266,8 @@ public class ItemCAD extends Item implements ICAD {
 
     private static String statName(EnumCADStat stat) {
         String name = stat.name();
-        return name.substring(0, 1) + name.substring(1).toLowerCase();
+        return name.substring(0, 1) + name.substring(1)
+            .toLowerCase();
     }
 
     @Override
@@ -296,8 +292,7 @@ public class ItemCAD extends Item implements ICAD {
     }
 
     @Override
-    public void setStoredVector(ItemStack stack, int memorySlot, Vector3 vec)
-        throws SpellRuntimeException {
+    public void setStoredVector(ItemStack stack, int memorySlot, Vector3 vec) throws SpellRuntimeException {
         int size = getMemorySize(stack);
         if (memorySlot < 0 || memorySlot >= size) {
             throw new SpellRuntimeException(SpellRuntimeException.MEMORY_OUT_OF_BOUNDS);
@@ -307,8 +302,7 @@ public class ItemCAD extends Item implements ICAD {
     }
 
     @Override
-    public Vector3 getStoredVector(ItemStack stack, int memorySlot)
-        throws SpellRuntimeException {
+    public Vector3 getStoredVector(ItemStack stack, int memorySlot) throws SpellRuntimeException {
         int size = getMemorySize(stack);
         if (memorySlot < 0 || memorySlot >= size) {
             throw new SpellRuntimeException(SpellRuntimeException.MEMORY_OUT_OF_BOUNDS);
@@ -332,12 +326,13 @@ public class ItemCAD extends Item implements ICAD {
     public int getSpellColor(ItemStack stack) {
         return getSpellColorValue(stack);
     }
-/*
-    @Override
-    public boolean craft(ItemStack cad, EntityPlayer player, PieceCraftingTrick trick) {
-        return false;
-    }
-*/
+
+    /*
+     * @Override
+     * public boolean craft(ItemStack cad, EntityPlayer player, PieceCraftingTrick trick) {
+     * return false;
+     * }
+     */
     private static boolean canCast(ItemStack cad, Spell spell) {
         try {
             CompiledSpell compiled = new SpellCompiler().compile(spell);
@@ -358,7 +353,7 @@ public class ItemCAD extends Item implements ICAD {
     private static String componentName(ItemStack stack) {
         return stack == null ? ""
             : stack.getUnlocalizedName()
-            .replace("item.psi.", "");
+                .replace("item.psi.", "");
     }
 
     private static String componentDisplayName(ItemStack stack, String key) {
@@ -388,12 +383,12 @@ public class ItemCAD extends Item implements ICAD {
         ItemCADComponent component = component(stack, key);
         if (component != null) for (Map.Entry<String, Integer> stat : component.getStats()
             .entrySet()) {
-            String value = stat.getValue()
-                .intValue() == -1 ? "Infinity"
-                : stat.getValue()
-                .toString();
-            tooltip.add(" " + EnumChatFormatting.AQUA + stat.getKey() + EnumChatFormatting.GRAY + ": " + value);
-        }
+                String value = stat.getValue()
+                    .intValue() == -1 ? "Infinity"
+                        : stat.getValue()
+                            .toString();
+                tooltip.add(" " + EnumChatFormatting.AQUA + stat.getKey() + EnumChatFormatting.GRAY + ": " + value);
+            }
     }
 
     @Override
@@ -533,7 +528,7 @@ public class ItemCAD extends Item implements ICAD {
                 new ChatComponentText(
                     EnumChatFormatting.RED + "[Psi Error] "
                         + e.getClass()
-                        .getSimpleName()
+                            .getSimpleName()
                         + ": "
                         + e.getMessage()));
             e.printStackTrace();
@@ -590,14 +585,14 @@ public class ItemCAD extends Item implements ICAD {
             }
         } else if (stack != null && stack.hasTagCompound()
             && stack.getTagCompound()
-            .hasKey(TAG_ASSEMBLY)) {
-            tooltip.add(
-                EnumChatFormatting.GRAY + "Hold "
-                    + EnumChatFormatting.AQUA
-                    + "SHIFT"
-                    + EnumChatFormatting.GRAY
-                    + " for more info");
-        }
+                .hasKey(TAG_ASSEMBLY)) {
+                    tooltip.add(
+                        EnumChatFormatting.GRAY + "Hold "
+                            + EnumChatFormatting.AQUA
+                            + "SHIFT"
+                            + EnumChatFormatting.GRAY
+                            + " for more info");
+                }
     }
 
     /**
@@ -639,4 +634,3 @@ public class ItemCAD extends Item implements ICAD {
         nbt.setTag(TAG_SPELL, spellNbt);
     }
 }
-

@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
  * create a CAD.
  */
 public interface ICADComponent {
+
     /** Gets the component type of the given stack. */
     EnumCADComponent getComponentType(ItemStack stack);
 

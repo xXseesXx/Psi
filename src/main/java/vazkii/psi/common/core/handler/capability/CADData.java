@@ -1,22 +1,18 @@
 package vazkii.psi.common.core.handler.capability;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.MathHelper;
 
+import vazkii.psi.api.cad.EnumCADStat;
 import vazkii.psi.api.cad.ICAD;
 import vazkii.psi.api.cad.ICADData;
 import vazkii.psi.api.cad.ISocketable;
-import vazkii.psi.api.cad.EnumCADStat;
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.ISpellAcceptor;
 import vazkii.psi.api.spell.Spell;
-import vazkii.psi.api.spell.SpellContext;
 import vazkii.psi.common.item.component.ItemCADSocket;
 
 /**
@@ -81,9 +77,9 @@ public class CADData implements ICADData, ISpellAcceptor, ISocketable {
         if (memorySlot >= memory.tagCount()) return Vector3.zero.copy();
 
         return new Vector3(
-                memory.func_150309_d(memorySlot * 3),
-                memory.func_150309_d(memorySlot * 3 + 1),
-                memory.func_150309_d(memorySlot * 3 + 2));
+            memory.func_150309_d(memorySlot * 3),
+            memory.func_150309_d(memorySlot * 3 + 1),
+            memory.func_150309_d(memorySlot * 3 + 2));
     }
 
     @Override
@@ -122,7 +118,8 @@ public class CADData implements ICADData, ISpellAcceptor, ISocketable {
         ItemStack bullet = getBulletInSocket(slot);
 
         if (bullet != null && bullet.stackSize > 0 && ISpellAcceptor.isAcceptor(bullet)) {
-            ISpellAcceptor.acceptor(bullet).setSpell(player, spell);
+            ISpellAcceptor.acceptor(bullet)
+                .setSpell(player, spell);
             setBulletInSocket(slot, bullet);
 
         }

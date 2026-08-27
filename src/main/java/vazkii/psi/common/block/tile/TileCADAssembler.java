@@ -157,7 +157,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
             ItemStack cad = inventory[SLOT_CAD];
             inventory[SLOT_BULLET_START + i] = cad != null && isBulletSlotEnabled(i)
                 ? (cad.getItem() instanceof ItemCreativeCAD ? ItemCreativeCAD.getBullet(cad, i)
-                : ItemCAD.getBullet(cad, i))
+                    : ItemCAD.getBullet(cad, i))
                 : null;
         }
     }
@@ -197,7 +197,8 @@ public class TileCADAssembler extends TileEntity implements IInventory {
 
         boolean legacyLayout = false;
         for (int i = 0; i < list.tagCount(); i++) {
-            int slot = list.getCompoundTagAt(i).getByte("Slot") & 255;
+            int slot = list.getCompoundTagAt(i)
+                .getByte("Slot") & 255;
             if (slot == 17 || slot == 18 || (slot >= 5 && slot <= 16)) {
                 legacyLayout = true;
                 break;
@@ -221,8 +222,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
         if (slot == 2) return SLOT_CORE;
         if (slot == 3) return SLOT_SOCKET;
         if (slot == 4) return SLOT_BATTERY;
-        if (slot >= 5 && slot < 5 + MAGAZINE_SLOTS)
-            return SLOT_BULLET_START + slot - 5;
+        if (slot >= 5 && slot < 5 + MAGAZINE_SLOTS) return SLOT_BULLET_START + slot - 5;
         if (slot == 17) return SLOT_OUTPUT;
         if (slot == 18) return SLOT_DYE;
         return -1;

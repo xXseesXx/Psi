@@ -4,6 +4,7 @@ import java.util.Locale;
 
 /** An enum defining all types of CAD components. */
 public enum EnumCADComponent {
+
     /** If you define an item using this component, it must implement ICADAssembly. */
     ASSEMBLY,
     CORE,

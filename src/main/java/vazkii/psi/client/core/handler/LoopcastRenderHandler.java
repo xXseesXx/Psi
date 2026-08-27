@@ -84,9 +84,11 @@ public class LoopcastRenderHandler {
         RenderSpellCircle.renderCircle(x, y, z, player.ticksExisted, 0.75F * multiplier, color);
     }
 
-    /** getSpellColor now lives on ICAD as an instance method; fall back to the default spell
-     *  color if the player somehow isn't holding a CAD when this is called (e.g. loopcast state
-     *  hasn't caught up with a hotbar swap yet). */
+    /**
+     * getSpellColor now lives on ICAD as an instance method; fall back to the default spell
+     * color if the player somehow isn't holding a CAD when this is called (e.g. loopcast state
+     * hasn't caught up with a hotbar swap yet).
+     */
     private static int spellColorOf(EntityPlayer player) {
         ItemStack held = player.getHeldItem();
         if (held != null && held.getItem() instanceof ICAD) {

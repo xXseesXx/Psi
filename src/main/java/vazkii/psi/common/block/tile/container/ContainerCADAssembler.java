@@ -49,11 +49,7 @@ public class ContainerCADAssembler extends Container {
         /*
          * Output slot.
          */
-        addSlotToContainer(new Slot(
-            assembler,
-            OUTPUT_SLOT,
-            120,
-            35) {
+        addSlotToContainer(new Slot(assembler, OUTPUT_SLOT, 120, 35) {
 
             @Override
             public boolean isItemValid(ItemStack stack) {
@@ -70,11 +66,7 @@ public class ContainerCADAssembler extends Container {
         /*
          * CAD slot.
          */
-        addSlotToContainer(new Slot(
-            assembler,
-            CAD_SLOT,
-            35,
-            21) {
+        addSlotToContainer(new Slot(assembler, CAD_SLOT, 35, 21) {
 
             @Override
             public boolean isItemValid(ItemStack stack) {
@@ -99,7 +91,6 @@ public class ContainerCADAssembler extends Container {
 
         /*
          * CAD magazine.
-         *
          * These are real TileCADAssembler inventory slots in the 1.7.10
          * backport. Each magazine slot only accepts a single spell bullet.
          */
@@ -107,21 +98,15 @@ public class ContainerCADAssembler extends Container {
             for (int col = 0; col < 3; col++) {
                 final int slot = BULLET_START + col + row * 3;
 
-                addSlotToContainer(new Slot(
-                    assembler,
-                    slot,
-                    17 + col * 18,
-                    57 + row * 18) {
+                addSlotToContainer(new Slot(assembler, slot, 17 + col * 18, 57 + row * 18) {
 
                     private boolean enabled() {
-                        return assembler.isBulletSlotEnabled(
-                            slot - BULLET_START);
+                        return assembler.isBulletSlotEnabled(slot - BULLET_START);
                     }
 
                     @Override
                     public boolean isItemValid(ItemStack stack) {
-                        return enabled()
-                            && assembler.isItemValidForSlot(slot, stack);
+                        return enabled() && assembler.isItemValidForSlot(slot, stack);
                     }
 
                     @Override
@@ -142,11 +127,7 @@ public class ContainerCADAssembler extends Container {
          */
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlotToContainer(new Slot(
-                    player.inventory,
-                    col + row * 9 + 9,
-                    48 + col * 18,
-                    143 + row * 18));
+                addSlotToContainer(new Slot(player.inventory, col + row * 9 + 9, 48 + col * 18, 143 + row * 18));
             }
         }
 
@@ -154,20 +135,12 @@ public class ContainerCADAssembler extends Container {
          * Player hotbar.
          */
         for (int col = 0; col < 9; col++) {
-            addSlotToContainer(new Slot(
-                player.inventory,
-                col,
-                48 + col * 18,
-                201));
+            addSlotToContainer(new Slot(player.inventory, col, 48 + col * 18, 201));
         }
     }
 
     private void addInputSlot(final int slot, int x, int y) {
-        addSlotToContainer(new Slot(
-            assembler,
-            slot,
-            x,
-            y) {
+        addSlotToContainer(new Slot(assembler, slot, x, y) {
 
             @Override
             public boolean isItemValid(ItemStack stack) {
@@ -209,11 +182,7 @@ public class ContainerCADAssembler extends Container {
          * Assembler -> player inventory.
          */
         else {
-            moved = mergeItemStack(
-                sourceStack,
-                PLAYER_START,
-                HOTBAR_END,
-                true);
+            moved = mergeItemStack(sourceStack, PLAYER_START, HOTBAR_END, true);
         }
 
         if (!moved) {
@@ -243,19 +212,14 @@ public class ContainerCADAssembler extends Container {
          * the generic ICADComponent path.
          */
         if (item instanceof ICADColorizer) {
-            return mergeItemStack(
-                stack,
-                DYE_SLOT,
-                DYE_SLOT + 1,
-                false);
+            return mergeItemStack(stack, DYE_SLOT, DYE_SLOT + 1, false);
         }
 
         /*
          * Normal CAD components.
          */
         if (item instanceof ICADComponent) {
-            EnumCADComponent type =
-                ((ICADComponent) item).getComponentType(stack);
+            EnumCADComponent type = ((ICADComponent) item).getComponentType(stack);
 
             if (type == null) {
                 return false;
@@ -263,29 +227,19 @@ public class ContainerCADAssembler extends Container {
 
             int target = COMPONENT_START + type.ordinal();
 
-            return mergeItemStack(
-                stack,
-                target,
-                target + 1,
-                false);
+            return mergeItemStack(stack, target, target + 1, false);
         }
 
         /*
          * Normal and creative CADs.
          */
-        if (item instanceof ItemCAD
-            || item instanceof ItemCreativeCAD) {
+        if (item instanceof ItemCAD || item instanceof ItemCreativeCAD) {
 
-            return mergeItemStack(
-                stack,
-                CAD_SLOT,
-                CAD_SLOT + 1,
-                false);
+            return mergeItemStack(stack, CAD_SLOT, CAD_SLOT + 1, false);
         }
 
         /*
          * Spell containers, including ItemSpellBullet.
-         *
          * Do this through the ISpellAcceptor API rather than checking
          * ItemSpellBullet directly. The 1.7.10 adapter can therefore expose
          * bullets exactly like the modern capability implementation does.
@@ -298,11 +252,7 @@ public class ContainerCADAssembler extends Container {
          * Other socketable items belong in the CAD slot.
          */
         if (ISocketable.isSocketable(stack)) {
-            return mergeItemStack(
-                stack,
-                CAD_SLOT,
-                CAD_SLOT + 1,
-                false);
+            return mergeItemStack(stack, CAD_SLOT, CAD_SLOT + 1, false);
         }
 
         /*
@@ -321,9 +271,7 @@ public class ContainerCADAssembler extends Container {
     private boolean moveBulletToMagazine(ItemStack sourceStack) {
         boolean moved = false;
 
-        for (int slot = BULLET_START;
-             slot < BULLET_END && sourceStack.stackSize > 0;
-             slot++) {
+        for (int slot = BULLET_START; slot < BULLET_END && sourceStack.stackSize > 0; slot++) {
 
             Slot target = (Slot) inventorySlots.get(slot);
 

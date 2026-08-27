@@ -28,11 +28,12 @@ public class ItemSpellBullet extends Item {
     }
 
     public static Spell getSpell(ItemStack stack) {
-        return stack != null
-            && stack.hasTagCompound()
-            && stack.getTagCompound().hasKey(TAG_SPELL, 10)
-            ? Spell.readFromNBT(stack.getTagCompound().getCompoundTag(TAG_SPELL))
-            : null;
+        return stack != null && stack.hasTagCompound()
+            && stack.getTagCompound()
+                .hasKey(TAG_SPELL, 10) ? Spell.readFromNBT(
+                    stack.getTagCompound()
+                        .getCompoundTag(TAG_SPELL))
+                    : null;
     }
 
     public static void setSpell(ItemStack stack, Spell spell) {
@@ -42,7 +43,8 @@ public class ItemSpellBullet extends Item {
 
         if (spell == null) {
             if (stack.hasTagCompound()) {
-                stack.getTagCompound().removeTag(TAG_SPELL);
+                stack.getTagCompound()
+                    .removeTag(TAG_SPELL);
             }
             return;
         }
@@ -53,7 +55,8 @@ public class ItemSpellBullet extends Item {
 
         NBTTagCompound tag = new NBTTagCompound();
         spell.writeToNBT(tag);
-        stack.getTagCompound().setTag(TAG_SPELL, tag);
+        stack.getTagCompound()
+            .setTag(TAG_SPELL, tag);
     }
 
     public void castSpell(ItemStack stack, EntityPlayer caster) throws Exception {
@@ -68,9 +71,9 @@ public class ItemSpellBullet extends Item {
         }
 
         CompiledSpell compiled = new SpellCompiler().compile(spell);
-        compiled.execute(new SpellContext()
-            .setPlayer(caster)
-            .setSpell(spell));
+        compiled.execute(
+            new SpellContext().setPlayer(caster)
+                .setSpell(spell));
     }
 
     public ArrayList<Entity> castSpell(ItemStack stack, SpellContext context) {
@@ -85,8 +88,7 @@ public class ItemSpellBullet extends Item {
 
             context.setSpell(spell);
             compiled.execute(context);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         return new ArrayList<Entity>();
     }
@@ -112,48 +114,40 @@ public class ItemSpellBullet extends Item {
     public String getItemStackDisplayName(ItemStack stack) {
         Spell spell = getSpell(stack);
 
-        return spell != null
-            && spell.name != null
-            && !spell.name.isEmpty()
-            ? EnumChatFormatting.AQUA + spell.name
+        return spell != null && spell.name != null && !spell.name.isEmpty() ? EnumChatFormatting.AQUA + spell.name
             : super.getItemStackDisplayName(stack);
     }
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
-        if (!Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)
-            && !Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+        if (!Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
 
             tooltip.add(
                 EnumChatFormatting.GRAY + "Hold "
-                    + EnumChatFormatting.AQUA + "SHIFT"
-                    + EnumChatFormatting.GRAY + " for more info"
-            );
+                    + EnumChatFormatting.AQUA
+                    + "SHIFT"
+                    + EnumChatFormatting.GRAY
+                    + " for more info");
 
             return;
         }
 
-        tooltip.add(
-            EnumChatFormatting.AQUA + "Type"
-                + EnumChatFormatting.GRAY + ": " + bulletTypeName()
-        );
+        tooltip.add(EnumChatFormatting.AQUA + "Type" + EnumChatFormatting.GRAY + ": " + bulletTypeName());
 
         tooltip.add(
             EnumChatFormatting.AQUA + "Cost Multiplier"
-                + EnumChatFormatting.GRAY + ": "
+                + EnumChatFormatting.GRAY
+                + ": "
                 + (int) (getCostModifier(stack) * 100)
-                + "%"
-        );
+                + "%");
     }
 
     private String bulletTypeName() {
         String key = "psi.bullet_type_" + getBulletType();
         String translated = net.minecraft.util.StatCollector.translateToLocal(key);
 
-        return key.equals(translated)
-            ? getBulletType()
-            : translated;
+        return key.equals(translated) ? getBulletType() : translated;
     }
 
     /**
