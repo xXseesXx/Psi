@@ -1,0 +1,54 @@
+/*
+ * This class is distributed as part of the Psi Mod.
+ * Get the Source Code in GitHub:
+ * https://github.com/Vazkii/Psi
+ * Psi is Open Source and distributed under the
+ * Psi License: https://psi.vazkii.net/license.php
+ * 1.7.10 Backport: Based on
+ * Psi-1.21.1/src/main/java/vazkii/psi/common/spell/operator/entity/PieceOperatorRandomEntity.java:1
+ */
+package vazkii.psi.common.spell.operator.entity;
+
+import java.util.concurrent.ThreadLocalRandom;
+
+import net.minecraft.entity.Entity;
+
+import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
+import vazkii.psi.api.spell.SpellParam;
+import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.api.spell.param.ParamEntityListWrapper;
+import vazkii.psi.api.spell.piece.PieceOperator;
+import vazkii.psi.api.spell.wrapper.EntityListWrapper;
+
+public class PieceOperatorRandomEntity extends PieceOperator {
+
+    SpellParam<EntityListWrapper> list;
+
+    public PieceOperatorRandomEntity(Spell spell) {
+        super(spell);
+    }
+
+    @Override
+    public void initParams() {
+        addParam(list = new ParamEntityListWrapper(SpellParam.GENERIC_NAME_TARGET, SpellParam.YELLOW, false, false));
+    }
+
+    @Override
+    public Object execute(SpellContext context) throws SpellRuntimeException {
+        EntityListWrapper listVal = this.getParamValue(context, list);
+        if (listVal.size() == 0) {
+            throw new SpellRuntimeException(SpellRuntimeException.NULL_TARGET);
+        }
+
+        return listVal.get(
+            ThreadLocalRandom.current()
+                .nextInt(listVal.size()));
+    }
+
+    @Override
+    public Class<?> getEvaluationType() {
+        return Entity.class;
+    }
+
+}

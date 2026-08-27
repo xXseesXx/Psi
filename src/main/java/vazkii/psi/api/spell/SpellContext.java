@@ -9,12 +9,16 @@ package vazkii.psi.api.spell;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 
 import vazkii.psi.api.internal.MathHelper;
 import vazkii.psi.api.internal.Vector3;
+import vazkii.psi.compampac.BlockPosCompat;
 
 /**
  * Context for a spell. Used for casting it.
@@ -60,10 +64,34 @@ public final class SpellContext {
     public Spell spell;
 
     /**
+     * Compiled spell (modern parity). In 1.7.10 barebones, cspell wraps spell for metadata/errorsSuppressed.
+     * Modern counterpart: Psi-1.21.1/src/main/java/vazkii/psi/api/spell/SpellContext.java:61
+     * Added to unblock tricks (Delay, ChangeSlot, SaveVector) pending full compiler expansion.
+     */
+    public CompiledSpell cspell;
+
+    /**
      * The loopcast index of this context. This is always 0 when the spell is cast as not a
      * loopcast. Increments every time for each loopcast iteration.
      */
     public int loopcastIndex = 0;
+
+    // Tool/Block/Actions parity with modern — added to unblock tricks (Delay, ChangeSlot)
+    // Modern: ItemStack tool, BlockHitResult positionBroken, Stack<Action> actions, int delay, targetSlot etc
+    public ItemStack tool = null;
+    public BlockPosCompat positionBroken = null;
+    public Stack<CompiledSpell.Action> actions = null;
+
+    public int targetSlot = 1;
+    public boolean shiftTargetSlot = true;
+    public boolean customTargetSlot = false;
+
+    public int delay = 0;
+
+    // Armor/Sword parity — added for Attacker/AttackTarget/DamageTaken selectors (modern 230 lines)
+    public EntityLivingBase attackedEntity = null;
+    public EntityLivingBase attackingEntity = null;
+    public double damageTaken = 0;
 
     /**
      * Grid storing evaluated values from spell pieces during execution.
@@ -102,6 +130,22 @@ public final class SpellContext {
      */
     public SpellContext setSpell(Spell spell) {
         this.spell = spell;
+        // GTNH: also create compiled wrapper for modern parity (metadata/errorsSuppressed checks)
+        if (spell != null) {
+            try {
+                this.cspell = new CompiledSpell(spell);
+            } catch (Exception e) {
+                this.cspell = null;
+            }
+        } else {
+            this.cspell = null;
+        }
+        return this;
+    }
+
+    public SpellContext setCompiledSpell(CompiledSpell compiled) {
+        this.cspell = compiled;
+        this.spell = compiled != null ? compiled.sourceSpell : null;
         return this;
     }
 
@@ -110,12 +154,26 @@ public final class SpellContext {
         return this;
     }
 
+    public int getTargetSlot() throws SpellRuntimeException {
+        // GTNH: simplified — modern computes based on CAD slot + shift; 1.7.10 returns raw targetSlot
+        return targetSlot;
+    }
+
+    public ItemStack getHarvestTool() throws SpellRuntimeException {
+        if (tool != null && tool.stackSize > 0) return tool;
+        ItemStack cad = vazkii.psi.api.PsiAPI.getPlayerCAD(caster);
+        if (cad == null) throw new SpellRuntimeException(SpellRuntimeException.NO_CAD);
+        return cad;
+    }
+
     public boolean isValid() {
-        return spell != null && caster != null && focalPoint != null;
+        return (spell != null || cspell != null) && caster != null && focalPoint != null;
     }
 
     public boolean shouldSuppressErrors() {
-        return isValid() && spell.metadata.errorsSuppressed;
+        if (!isValid()) return false;
+        if (cspell != null && cspell.metadata != null) return cspell.metadata.errorsSuppressed;
+        return spell != null && spell.metadata != null && spell.metadata.errorsSuppressed;
     }
 
     /**

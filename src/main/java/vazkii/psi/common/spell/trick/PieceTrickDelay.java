@@ -1,0 +1,52 @@
+/*
+ * This class is distributed as part of the Psi Mod.
+ * Get the Source Code in GitHub:
+ * https://github.com/Vazkii/Psi
+ * Psi is Open Source and distributed under the
+ * Psi License: https://psi.vazkii.net/license.php
+ * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common/spell/trick/PieceTrickDelay.java:19
+ * GTNH adaptation: StatLabel(String,boolean)→StatLabel(String), ParamNumber<Double> vs Number, delay field now exists
+ * via SpellContext expansion.
+ */
+package vazkii.psi.common.spell.trick;
+
+import vazkii.psi.api.spell.*;
+import vazkii.psi.api.spell.param.ParamNumber;
+import vazkii.psi.api.spell.piece.PieceTrick;
+
+public class PieceTrickDelay extends PieceTrick {
+
+    SpellParam<Double> time;
+
+    public PieceTrickDelay(Spell spell) {
+        super(spell);
+        setStatLabel(EnumSpellStat.COMPLEXITY, new StatLabel(1));
+        setStatLabel(EnumSpellStat.POTENCY, new StatLabel(SpellParam.GENERIC_NAME_TIME));
+        setStatLabel(EnumSpellStat.PROJECTION, null);
+    }
+
+    @Override
+    public void initParams() {
+        addParam(time = new ParamNumber(SpellParam.GENERIC_NAME_TIME, SpellParam.BLUE, false, true));
+    }
+
+    @Override
+    public void addToMetadata(SpellMetadata meta) throws SpellCompilationException {
+        meta.addStat(EnumSpellStat.COMPLEXITY, 1);
+
+        Double timeVal = this.<Double>getParamEvaluation(time);
+        if (timeVal == null || timeVal <= 0 || timeVal != timeVal.intValue()) {
+            throw new SpellCompilationException(SpellCompilationException.NON_POSITIVE_INTEGER, x, y);
+        }
+
+        meta.addStat(EnumSpellStat.POTENCY, timeVal.intValue());
+    }
+
+    @Override
+    public Object execute(SpellContext context) throws SpellRuntimeException {
+        context.delay = this.getParamValue(context, time)
+            .intValue();
+
+        return null;
+    }
+}

@@ -291,6 +291,28 @@ public class Vector3 {
         return this;
     }
 
+    /**
+     * Rotates this vector around an axis by angle (radians).
+     * 1.21.1 parity: Vector3.rotate — delegates to Quat.
+     * Modern counterpart: Psi-1.21.1/src/main/java/vazkii/psi/api/internal/Vector3.java:222
+     */
+    public Vector3 rotate(double angle, Vector3 axis) {
+        Quat.aroundAxis(
+            axis.copy()
+                .normalize(),
+            angle)
+            .rotate(this);
+        return this;
+    }
+
+    /**
+     * Alias for {@link #toVec3()} — modern calls it toVec3D(). Added for close-to-source diff.
+     * Modern counterpart: Vector3.java:183 toVec3D()
+     */
+    public Vec3 toVec3D() {
+        return toVec3();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Vector3)) {

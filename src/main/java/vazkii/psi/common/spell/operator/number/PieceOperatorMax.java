@@ -1,0 +1,55 @@
+/*
+ * This class is distributed as part of the Psi Mod.
+ * Get the Source Code in GitHub:
+ * https://github.com/Vazkii/Psi
+ * Psi is Open Source and distributed under the
+ * Psi License: https://psi.vazkii.net/license.php
+ * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common/spell/operator/number/PieceOperatorMax.java:1
+ * GTNH adaptation: ParamNumber<Double> (1.7.10) vs Number (1.21.1); Level->World not needed here.
+ */
+package vazkii.psi.common.spell.operator.number;
+
+import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
+import vazkii.psi.api.spell.SpellParam;
+import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.api.spell.param.ParamNumber;
+import vazkii.psi.api.spell.piece.PieceOperator;
+
+public class PieceOperatorMax extends PieceOperator {
+
+    SpellParam<Double> num1;
+    SpellParam<Double> num2;
+    SpellParam<Double> num3;
+
+    public PieceOperatorMax(Spell spell) {
+        super(spell);
+    }
+
+    @Override
+    public void initParams() {
+        addParam(num1 = new ParamNumber(SpellParam.GENERIC_NAME_NUMBER1, SpellParam.GREEN, false, false));
+        addParam(num2 = new ParamNumber(SpellParam.GENERIC_NAME_NUMBER2, SpellParam.GREEN, false, false));
+        addParam(num3 = new ParamNumber(SpellParam.GENERIC_NAME_NUMBER3, SpellParam.GREEN, true, false));
+    }
+
+    @Override
+    public Object execute(SpellContext context) throws SpellRuntimeException {
+        double d1 = this.getParamValue(context, num1)
+            .doubleValue();
+        double d2 = this.getParamValue(context, num2)
+            .doubleValue();
+        Double d3 = this.getParamValue(context, num3);
+        if (d3 == null) {
+            d3 = Double.NEGATIVE_INFINITY;
+        }
+
+        return Math.max(d1, Math.max(d2, d3.doubleValue()));
+    }
+
+    @Override
+    public Class<?> getEvaluationType() {
+        return Double.class;
+    }
+
+}

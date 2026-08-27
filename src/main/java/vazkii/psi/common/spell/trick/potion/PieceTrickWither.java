@@ -1,0 +1,36 @@
+/*
+ * This class is distributed as part of the Psi Mod.
+ * Get the Source Code in GitHub:
+ * https://github.com/Vazkii/Psi
+ * Psi is Open Source and distributed under the
+ * Psi License: https://psi.vazkii.net/license.php
+ * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common/spell/trick/potion/PieceTrickWither.java:1
+ */
+package vazkii.psi.common.spell.trick.potion;
+
+import net.minecraft.potion.Potion;
+
+import vazkii.psi.api.spell.*;
+
+public class PieceTrickWither extends PieceTrickPotionBase {
+
+    public PieceTrickWither(Spell spell) {
+        super(spell);
+        setStatLabel(
+            EnumSpellStat.POTENCY,
+            new StatLabel(SpellParam.GENERIC_NAME_TIME).mul(SpellParam.GENERIC_NAME_POWER)
+                .square()
+                .mul(20));
+    }
+
+    @Override
+    public Potion getPotion() {
+        return Potion.wither;
+    }
+
+    @Override
+    public int getPotency(int power, int time) throws SpellCompilationException {
+        return super.getPotency(power, time) * 4;
+    }
+
+}

@@ -239,6 +239,39 @@ public abstract class SpellPiece {
     }
 
     /**
+     * Null-safe version of getParamValue — mirrors modern Psi.
+     * Modern counterpart: Psi-1.21.1/src/main/java/vazkii/psi/api/spell/SpellPiece.java:257
+     */
+    public <T> T getNotNullParamValue(SpellContext context, SpellParam<T> param) throws SpellRuntimeException {
+        T v = getParamValue(context, param);
+        if (v == null) {
+            throw new SpellRuntimeException(SpellRuntimeException.NULL_TARGET);
+        }
+        return v;
+    }
+
+    /**
+     * Null-safe version of getParamEvaluation — mirrors modern Psi.
+     * Modern counterpart: SpellPiece.java:312
+     */
+    public <T> T getNotNullParamEvaluation(SpellParam<T> param) throws SpellCompilationException {
+        T v = getParamEvaluation(param);
+        if (v == null) {
+            throw new SpellCompilationException(SpellCompilationException.NULL_PARAM, this.x, this.y);
+        }
+        return v;
+    }
+
+    /**
+     * Defaulted version of getParamEvaluation with typo-preserved name for close-to-source.
+     * Modern has getParamEvaluationeOrDefault (typo). Added for diff parity.
+     */
+    public <T> T getParamEvaluationeOrDefault(SpellParam<T> param, T def) throws SpellCompilationException {
+        T v = getParamEvaluation(param);
+        return v == null ? def : v;
+    }
+
+    /**
      * Evaluates a constant parameter while compiling metadata. This is the
      * 1.7.10 equivalent of modern Psi's getParamEvaluation implementation.
      */

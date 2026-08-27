@@ -26,6 +26,16 @@ public class Psi {
     public static final String MOD_NAME = "Psi";
     public static final Logger logger = LogManager.getLogger(MOD_ID);
 
+    /**
+     * 1.21.1 parity: Psi.location(String) helper.
+     * Modern counterpart: Psi-1.21.1/src/main/java/vazkii/psi/common/Psi.java:73
+     * GTNH adaptation: net.minecraft.util.ResourceLocation("psi", path) instead of
+     * ResourceLocation.fromNamespaceAndPath.
+     */
+    public static net.minecraft.util.ResourceLocation location(String path) {
+        return new net.minecraft.util.ResourceLocation(MOD_ID, path);
+    }
+
     @Mod.Instance(MOD_ID)
     public static Psi instance;
 

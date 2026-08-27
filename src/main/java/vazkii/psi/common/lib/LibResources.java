@@ -7,13 +7,25 @@
  */
 package vazkii.psi.common.lib;
 
+import net.minecraft.util.ResourceLocation;
+
+import vazkii.psi.common.Psi;
+
+/**
+ * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common/lib/LibResources.java:18
+ * Modern uses ResourceKey<DamageType> and Registries.DAMAGE_TYPE — not available in 1.7.10.
+ * GTNH adaptations annotated inline.
+ */
 public class LibResources {
 
     public static final String PREFIX_MOD = "psi:";
-    // public static final ResourceLocation PATCHOULI_BOOK = Psi.location("encyclopaedia_psionica");
+    public static final ResourceLocation PATCHOULI_BOOK = Psi.location("encyclopaedia_psionica");
 
-    // public static final ResourceKey<DamageType> PSI_OVERLOAD = ResourceKey.create(Registries.DAMAGE_TYPE,
+    // Modern: ResourceKey<DamageType> PSI_OVERLOAD = ResourceKey.create(Registries.DAMAGE_TYPE,
     // Psi.location("psi_overload"));
+    // GTNH 1.7.10: DamageSource is string-based. Use DamageSource("psiOverload") at call site.
+    public static final String PSI_OVERLOAD_DAMAGE_TYPE = "psi_overload";
+    public static final ResourceLocation PSI_OVERLOAD_ID = Psi.location(PSI_OVERLOAD_DAMAGE_TYPE);
 
     public static final String PREFIX_GUI = PREFIX_MOD + "textures/gui/";
     public static final String GUI_CAD_ASSEMBLER = PREFIX_GUI + "cad_assembler.png";
@@ -24,10 +36,9 @@ public class LibResources {
     public static final String GUI_PROGRAMMER = PREFIX_GUI + "programmer.png";
     public static final String GUI_CREATIVE = "psi.png";
     public static final String PREFIX_MODEL = "textures/model/";
-    // public static final ResourceLocation MODEL_PSIMETAL_EXOSUIT = Psi.location(PREFIX_MODEL +
-    // "psimetal_exosuit.png");
-    // public static final ResourceLocation MODEL_PSIMETAL_EXOSUIT_SENSOR = Psi.location(PREFIX_MODEL +
-    // "psimetal_exosuit_sensor.png");
+    public static final ResourceLocation MODEL_PSIMETAL_EXOSUIT = Psi.location(PREFIX_MODEL + "psimetal_exosuit.png");
+    public static final ResourceLocation MODEL_PSIMETAL_EXOSUIT_SENSOR = Psi
+        .location(PREFIX_MODEL + "psimetal_exosuit_sensor.png");
     public static final String PREFIX_MISC = PREFIX_MOD + "textures/misc/";
     public static final String MISC_SPELL_CIRCLE = PREFIX_MISC + "spell_circle%d.png";
     public static final String SHADER_PSI_BAR = "psi_bar";
