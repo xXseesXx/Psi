@@ -16,7 +16,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import vazkii.psi.client.core.handler.ClientTickHandler;
 import vazkii.psi.client.core.handler.KeybindHandler;
 import vazkii.psi.client.core.handler.LoopcastRenderHandler;
-import vazkii.psi.client.core.handler.PsiHUDHandler;
+import vazkii.psi.client.core.handler.HUDHandler;
 import vazkii.psi.client.fx.FXSparkle;
 import vazkii.psi.client.fx.FXWisp;
 import vazkii.psi.client.render.BlockMachineRenderer;
@@ -62,7 +62,7 @@ public class ClientProxy extends CommonProxy {
             .bus()
             .register(new ClientTickHandler());
 
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PsiHUDHandler());
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new HUDHandler());
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new LoopcastRenderHandler());
     }
 
@@ -83,7 +83,7 @@ public class ClientProxy extends CommonProxy {
 
                 @Override
                 public void run() {
-                    PsiHUDHandler.setPsi(previous, current, maximum);
+                    HUDHandler.setPsi(previous, current, maximum);
                 }
             });
     }

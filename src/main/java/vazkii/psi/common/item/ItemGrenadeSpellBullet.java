@@ -19,7 +19,7 @@ public class ItemGrenadeSpellBullet extends ItemSpellBullet {
     }
 
     @Override
-    public double getCostModifier() {
+    public double getCostModifier(ItemStack stack) {
         return 1.05;
     }
 

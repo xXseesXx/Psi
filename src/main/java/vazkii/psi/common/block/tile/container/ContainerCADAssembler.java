@@ -5,82 +5,113 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
+import vazkii.psi.api.cad.EnumCADComponent;
 import vazkii.psi.api.cad.ICADColorizer;
+import vazkii.psi.api.cad.ICADComponent;
+import vazkii.psi.api.cad.ISocketable;
+import vazkii.psi.api.inventory.InventorySocketable;
+import vazkii.psi.api.spell.ISpellAcceptor;
 import vazkii.psi.common.block.tile.TileCADAssembler;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
-import vazkii.psi.common.item.ItemSpellBullet;
-import vazkii.psi.common.item.component.ItemCADAssembly;
-import vazkii.psi.common.item.component.ItemCADBattery;
-import vazkii.psi.common.item.component.ItemCADCore;
-import vazkii.psi.common.item.component.ItemCADSocket;
 
-/** Container for CAD assembly and the existing creative-CAD spell-bullet magazine. */
+/** Container for CAD assembly and its socketed Spell Bullet magazine. */
 public class ContainerCADAssembler extends Container {
 
+    private static final int OUTPUT_SLOT = TileCADAssembler.SLOT_OUTPUT;
+    private static final int CAD_SLOT = TileCADAssembler.SLOT_CAD;
+    private static final int ASSEMBLY_SLOT = TileCADAssembler.SLOT_ASSEMBLY;
+    private static final int CORE_SLOT = TileCADAssembler.SLOT_CORE;
+    private static final int SOCKET_SLOT = TileCADAssembler.SLOT_SOCKET;
+    private static final int BATTERY_SLOT = TileCADAssembler.SLOT_BATTERY;
+    private static final int DYE_SLOT = TileCADAssembler.SLOT_DYE;
+
+    private static final int COMPONENT_START = ASSEMBLY_SLOT;
+    private static final int BULLET_START = 7;
+    private static final int BULLET_COUNT = ISocketable.MAX_ASSEMBLER_SLOTS;
+    private static final int BULLET_END = BULLET_START + BULLET_COUNT;
+    private static final int PLAYER_START = BULLET_END;
+    private static final int HOTBAR_END = PLAYER_START + 36;
+
     public final TileCADAssembler assembler;
+    private final InventorySocketable bullets;
 
     public ContainerCADAssembler(EntityPlayer player, TileCADAssembler assembler) {
         this.assembler = assembler;
-        addSlotToContainer(new Slot(assembler, TileCADAssembler.SLOT_OUTPUT, 120, 35) {
+        this.bullets = new InventorySocketable(assembler, CAD_SLOT);
 
+        addSlotToContainer(new Slot(assembler, OUTPUT_SLOT, 120, 35) {
             @Override
             public boolean isItemValid(ItemStack stack) {
                 return false;
             }
 
             @Override
-            public void onPickupFromSlot(EntityPlayer p, ItemStack stack) {
-                super.onPickupFromSlot(p, stack);
+            public void onPickupFromSlot(EntityPlayer player, ItemStack stack) {
+                super.onPickupFromSlot(player, stack);
                 assembler.craftCAD();
             }
         });
-        addSlotToContainer(new Slot(assembler, TileCADAssembler.SLOT_CAD, 35, 21) {
 
+        addSlotToContainer(new Slot(assembler, CAD_SLOT, 35, 21) {
             @Override
             public boolean isItemValid(ItemStack stack) {
-                return assembler.isItemValidForSlot(TileCADAssembler.SLOT_CAD, stack);
-            }
-
-            @Override
-            public void onPickupFromSlot(EntityPlayer p, ItemStack stack) {
-                super.onPickupFromSlot(p, stack);
-                assembler.clearMagazineView();
+                return assembler.isItemValidForSlot(CAD_SLOT, stack);
             }
         });
-        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_ASSEMBLY, 120, 91));
-        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_CORE, 100, 91));
-        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_SOCKET, 140, 91));
-        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_BATTERY, 110, 111));
-        addSlotToContainer(inputSlot(TileCADAssembler.SLOT_DYE, 130, 111));
 
-        for (int row = 0; row < 4; row++) for (int col = 0; col < 3; col++) {
-            final int index = TileCADAssembler.SLOT_BULLET_START + col + row * 3;
-            addSlotToContainer(new Slot(assembler, index, 17 + col * 18, 57 + row * 18) {
+        addInputSlot(ASSEMBLY_SLOT, 120, 91);
+        addInputSlot(CORE_SLOT, 100, 91);
+        addInputSlot(SOCKET_SLOT, 140, 91);
+        addInputSlot(BATTERY_SLOT, 110, 111);
+        addInputSlot(DYE_SLOT, 130, 111);
 
-                private boolean enabled() {
-                    return assembler.isBulletSlotEnabled(index - TileCADAssembler.SLOT_BULLET_START);
-                }
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 3; col++) {
+                final int socket = col + row * 3;
+                addSlotToContainer(new Slot(
+                    bullets, socket,
+                    17 + col * 18, 57 + row * 18) {
 
-                @Override
-                public boolean isItemValid(ItemStack stack) {
-                    return enabled() && assembler.isItemValidForSlot(index, stack);
-                }
+                    @Override
+                    public boolean isItemValid(ItemStack stack) {
+                        return bullets.isItemValidForSlot(socket, stack);
+                    }
 
-                @Override
-                public boolean canTakeStack(EntityPlayer p) {
-                    return enabled() && super.canTakeStack(p);
-                }
-
-                @Override
-                public int getSlotStackLimit() {
-                    return 1;
-                }
-            });
+                    @Override
+                    public int getSlotStackLimit() {
+                        return 1;
+                    }
+                });
+            }
         }
-        for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
-            addSlotToContainer(new Slot(player.inventory, col + row * 9 + 9, 48 + col * 18, 143 + row * 18));
-        for (int col = 0; col < 9; col++) addSlotToContainer(new Slot(player.inventory, col, 48 + col * 18, 201));
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                addSlotToContainer(new Slot(
+                    player.inventory,
+                    col + row * 9 + 9,
+                    48 + col * 18,
+                    143 + row * 18));
+            }
+        }
+
+        for (int col = 0; col < 9; col++) {
+            addSlotToContainer(new Slot(
+                player.inventory,
+                col,
+                48 + col * 18,
+                201));
+        }
+    }
+
+    private void addInputSlot(final int slot, int x, int y) {
+        addSlotToContainer(new Slot(assembler, slot, x, y) {
+            @Override
+            public boolean isItemValid(ItemStack stack) {
+                return assembler.isItemValidForSlot(slot, stack);
+            }
+        });
     }
 
     @Override
@@ -88,58 +119,69 @@ public class ContainerCADAssembler extends Container {
         return assembler.isUseableByPlayer(player);
     }
 
-    /** Validate at the Slot boundary so invalid cursor stacks are never consumed by a GUI click. */
-    private Slot inputSlot(final int inventorySlot, int x, int y) {
-        return new Slot(assembler, inventorySlot, x, y) {
-
-            @Override
-            public boolean isItemValid(ItemStack stack) {
-                return assembler.isItemValidForSlot(inventorySlot, stack);
-            }
-        };
-    }
-
-    /** Shift-clicks route each CAD part to its category-locked input, including the CAD magazine. */
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer player, int slot) {
-        if (slot < 0 || slot >= inventorySlots.size()) return null;
-        Slot source = (Slot) inventorySlots.get(slot);
+    public ItemStack transferStackInSlot(EntityPlayer player, int slotIndex) {
+        if (slotIndex < 0 || slotIndex >= inventorySlots.size()) return null;
+
+        Slot source = (Slot) inventorySlots.get(slotIndex);
         if (source == null || !source.getHasStack()) return null;
 
         ItemStack sourceStack = source.getStack();
         ItemStack original = sourceStack.copy();
         boolean moved;
-        if (slot >= 19) {
-            if (sourceStack.getItem() instanceof ItemCADAssembly) moved = mergeItemStack(sourceStack, 2, 3, false);
-            else if (sourceStack.getItem() instanceof ItemCADCore) moved = mergeItemStack(sourceStack, 3, 4, false);
-            else if (sourceStack.getItem() instanceof ItemCADSocket) moved = mergeItemStack(sourceStack, 4, 5, false);
-            else if (sourceStack.getItem() instanceof ItemCADBattery) moved = mergeItemStack(sourceStack, 5, 6, false);
-            else if (sourceStack.getItem() instanceof ICADColorizer) moved = mergeItemStack(sourceStack, 6, 7, false);
-            else if (sourceStack.getItem() instanceof ItemCAD || sourceStack.getItem() instanceof ItemCreativeCAD)
-                moved = mergeItemStack(sourceStack, 1, 2, false);
-            else if (sourceStack.getItem() instanceof ItemSpellBullet) moved = moveBulletsToMagazine(sourceStack);
-            else return null;
+
+        if (slotIndex >= PLAYER_START) {
+            moved = moveFromPlayer(sourceStack);
         } else {
-            moved = mergeItemStack(sourceStack, 19, inventorySlots.size(), true);
+            moved = mergeItemStack(sourceStack, PLAYER_START, HOTBAR_END, true);
         }
 
         if (!moved) return null;
+
         if (sourceStack.stackSize == 0) source.putStack(null);
         else source.onSlotChanged();
+
         source.onPickupFromSlot(player, sourceStack);
         return original;
     }
 
-    /**
-     * A CAD magazine stores one bullet per slot. Do not use mergeItemStack here:
-     * it merges matching bullets before checking the slot limit, which can consume
-     * a whole player stack into one magazine entry.
-     */
-    private boolean moveBulletsToMagazine(ItemStack sourceStack) {
+    private boolean moveFromPlayer(ItemStack stack) {
+        if (stack.getItem() instanceof ICADComponent) {
+            EnumCADComponent type =
+                ((ICADComponent) stack.getItem()).getComponentType(stack);
+
+            int target = COMPONENT_START + type.ordinal();
+            return mergeItemStack(stack, target, target + 1, false);
+        }
+
+        if (stack.getItem() instanceof ICADColorizer) {
+            return mergeItemStack(stack, DYE_SLOT, DYE_SLOT + 1, false);
+        }
+
+        if (stack.getItem() instanceof ItemCAD || stack.getItem() instanceof ItemCreativeCAD) {
+            return mergeItemStack(stack, CAD_SLOT, CAD_SLOT + 1, false);
+        }
+
+        if (ISpellAcceptor.isContainer(stack)) {
+            return moveBulletToMagazine(stack);
+        }
+
+        if (ISocketable.isSocketable(stack)) {
+            return mergeItemStack(stack, CAD_SLOT, CAD_SLOT + 1, false);
+        }
+
+        return mergeItemStack(stack, PLAYER_START, HOTBAR_END, false);
+    }
+
+    private boolean moveBulletToMagazine(ItemStack sourceStack) {
         boolean moved = false;
-        for (int slotIndex = 7; slotIndex < 19 && sourceStack.stackSize > 0; slotIndex++) {
-            Slot target = (Slot) inventorySlots.get(slotIndex);
-            if (target.getHasStack() || !target.isItemValid(sourceStack)) continue;
+
+        for (int socket = 0; socket < BULLET_COUNT && sourceStack.stackSize > 0; socket++) {
+            Slot target = (Slot) inventorySlots.get(BULLET_START + socket);
+
+            if (target.getHasStack() || !target.isItemValid(sourceStack)) {
+                continue;
+            }
 
             ItemStack bullet = sourceStack.copy();
             bullet.stackSize = 1;
@@ -147,6 +189,7 @@ public class ContainerCADAssembler extends Container {
             sourceStack.stackSize--;
             moved = true;
         }
+
         return moved;
     }
 }

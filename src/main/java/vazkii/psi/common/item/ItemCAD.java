@@ -19,17 +19,25 @@ import net.minecraft.world.World;
 import org.lwjgl.input.Keyboard;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import vazkii.psi.api.cad.EnumCADComponent;
+import vazkii.psi.api.cad.EnumCADStat;
+import vazkii.psi.api.cad.ICAD;
 import vazkii.psi.api.cad.ICADColorizer;
+import vazkii.psi.api.cad.ICADData;
 import vazkii.psi.api.spell.CompiledSpell;
+import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.EnumSpellStat;
 import vazkii.psi.api.spell.Spell;
 import vazkii.psi.api.spell.SpellCompilationException;
 import vazkii.psi.api.spell.SpellCompiler;
+import vazkii.psi.api.spell.SpellRuntimeException;
+import vazkii.psi.api.spell.piece.PieceCraftingTrick;
 import vazkii.psi.common.Psi;
 import vazkii.psi.common.core.handler.GuiHandler;
 import vazkii.psi.common.core.handler.PlayerPsiHandler;
 import vazkii.psi.common.core.proxy.CommonProxy;
 import vazkii.psi.common.item.component.ItemCADComponent;
+import vazkii.psi.common.core.handler.capability.CADData;
 
 /**
  * CAD (Computer-Aided Design) Assembly - stores and casts spells as projectiles.
@@ -37,7 +45,7 @@ import vazkii.psi.common.item.component.ItemCADComponent;
  * Right-click to shoot spell projectile.
  * Stores spell in NBT.
  */
-public class ItemCAD extends Item {
+public class ItemCAD extends Item implements ICAD {
 
     private static final String TAG_SPELL = "spell";
     private static final String TAG_ASSEMBLY = "cadAssembly";
@@ -65,7 +73,7 @@ public class ItemCAD extends Item {
     }
 
     public static ItemStack createCAD(ItemStack assembly, ItemStack core, ItemStack socket, ItemStack battery,
-        ItemStack colorizer) {
+                                      ItemStack colorizer) {
         ItemStack cad = new ItemStack(CommonProxy.itemCAD);
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString(TAG_ASSEMBLY, componentName(assembly));
@@ -80,7 +88,7 @@ public class ItemCAD extends Item {
     public static ItemStack getColorizer(ItemStack cad) {
         if (cad == null || !cad.hasTagCompound()
             || !cad.getTagCompound()
-                .hasKey(TAG_COLORIZER))
+            .hasKey(TAG_COLORIZER))
             return null;
         ItemStack colorizer = ItemStack.loadItemStackFromNBT(
             cad.getTagCompound()
@@ -102,7 +110,7 @@ public class ItemCAD extends Item {
             .setTag(TAG_COLORIZER, stored.writeToNBT(new NBTTagCompound()));
     }
 
-    public static int getSpellColor(ItemStack cad) {
+    public static int getSpellColorValue(ItemStack cad) {
         return Psi.proxy.getColorForColorizer(getColorizer(cad));
     }
 
@@ -125,7 +133,7 @@ public class ItemCAD extends Item {
         ItemCADComponent part = component(cad, componentKey);
         Integer value = part == null ? null
             : part.getStats()
-                .get(stat);
+            .get(stat);
         return value == null ? 0 : value.intValue();
     }
 
@@ -134,20 +142,20 @@ public class ItemCAD extends Item {
         return sockets < 0 ? MAX_MAGAZINE_SIZE : Math.min(MAX_MAGAZINE_SIZE, Math.max(0, sockets));
     }
 
-    public static int getStoredPsi(ItemStack cad) {
+    public static int getStoredPsiValue(ItemStack cad) {
         if (cad == null) return 0;
         int capacity = getStat(cad, "Overflow");
         if (capacity < 0) return -1;
         return cad.hasTagCompound() && cad.getTagCompound()
             .hasKey(TAG_STORED_PSI) ? Math.min(
-                capacity,
-                cad.getTagCompound()
-                    .getInteger(TAG_STORED_PSI))
-                : 0;
+            capacity,
+            cad.getTagCompound()
+                .getInteger(TAG_STORED_PSI))
+            : 0;
     }
 
     public static int consumeStoredPsi(ItemStack cad, int amount) {
-        int stored = getStoredPsi(cad);
+        int stored = getStoredPsiValue(cad);
         if (stored < 0) return 0;
         int used = Math.min(stored, amount);
         if (!cad.hasTagCompound()) cad.setTagCompound(new NBTTagCompound());
@@ -161,7 +169,7 @@ public class ItemCAD extends Item {
         if (capacity < 0) return;
         if (!cad.hasTagCompound()) cad.setTagCompound(new NBTTagCompound());
         cad.getTagCompound()
-            .setInteger(TAG_STORED_PSI, Math.min(capacity, getStoredPsi(cad) + amount));
+            .setInteger(TAG_STORED_PSI, Math.min(capacity, getStoredPsiValue(cad) + amount));
     }
 
     public static ItemStack getBullet(ItemStack cad, int slot) {
@@ -196,11 +204,11 @@ public class ItemCAD extends Item {
         int size = getMagazineSize(cad);
         return size == 0 || cad == null || !cad.hasTagCompound() ? 0
             : Math.max(
-                0,
-                Math.min(
-                    size - 1,
-                    cad.getTagCompound()
-                        .getInteger(TAG_SELECTED_SLOT)));
+            0,
+            Math.min(
+                size - 1,
+                cad.getTagCompound()
+                    .getInteger(TAG_SELECTED_SLOT)));
     }
 
     /** Returns the installed Assembly id used by the client CAD model renderer. */
@@ -217,6 +225,119 @@ public class ItemCAD extends Item {
             .setInteger(TAG_SELECTED_SLOT, Math.max(0, Math.min(size - 1, slot)));
     }
 
+
+    @Override
+    public ItemStack getComponentInSlot(ItemStack stack, EnumCADComponent type) {
+        if (stack == null || type == null) return null;
+
+        String key;
+        switch (type) {
+            case ASSEMBLY:
+                key = TAG_ASSEMBLY;
+                break;
+            case CORE:
+                key = TAG_CORE;
+                break;
+            case SOCKET:
+                key = TAG_SOCKET;
+                break;
+            case BATTERY:
+                key = TAG_BATTERY;
+                break;
+            case DYE:
+                ItemStack dye = getColorizer(stack);
+                return dye == null ? null : dye;
+            default:
+                return null;
+        }
+
+        ItemCADComponent component = component(stack, key);
+        return component == null ? null : new ItemStack(component);
+    }
+
+    @Override
+    public int getStatValue(ItemStack stack, EnumCADStat stat) {
+        if (stack == null || stat == null) return 0;
+
+        ItemStack componentStack = getComponentInSlot(stack, stat.getSourceType());
+        if (componentStack != null
+            && componentStack.getItem() instanceof ItemCADComponent) {
+            return ((ItemCADComponent) componentStack.getItem())
+                .getCADStatValue(componentStack, stat);
+        }
+
+        return getStat(stack, statName(stat));
+    }
+
+    private static String statName(EnumCADStat stat) {
+        String name = stat.name();
+        return name.substring(0, 1) + name.substring(1).toLowerCase();
+    }
+
+    @Override
+    public int getStoredPsi(ItemStack stack) {
+        return getStoredPsiValue(stack);
+    }
+
+    @Override
+    public void regenPsi(ItemStack stack, int psi) {
+        regenStoredPsi(stack, psi);
+    }
+
+    @Override
+    public int consumePsi(ItemStack stack, int psi) {
+        return consumeStoredPsi(stack, psi);
+    }
+
+    @Override
+    public int getMemorySize(ItemStack stack) {
+        int memory = getStat(stack, STAT_MEMORY);
+        return memory < 0 ? 0xFF : Math.max(0, memory);
+    }
+
+    @Override
+    public void setStoredVector(ItemStack stack, int memorySlot, Vector3 vec)
+        throws SpellRuntimeException {
+        int size = getMemorySize(stack);
+        if (memorySlot < 0 || memorySlot >= size) {
+            throw new SpellRuntimeException(SpellRuntimeException.MEMORY_OUT_OF_BOUNDS);
+        }
+
+        new CADData(stack).setSavedVector(memorySlot, vec);
+    }
+
+    @Override
+    public Vector3 getStoredVector(ItemStack stack, int memorySlot)
+        throws SpellRuntimeException {
+        int size = getMemorySize(stack);
+        if (memorySlot < 0 || memorySlot >= size) {
+            throw new SpellRuntimeException(SpellRuntimeException.MEMORY_OUT_OF_BOUNDS);
+        }
+
+        return new CADData(stack).getSavedVector(memorySlot);
+    }
+
+    @Override
+    public int getTime(ItemStack stack) {
+        return new CADData(stack).getTime();
+    }
+
+    @Override
+    public void incrementTime(ItemStack stack) {
+        CADData data = new CADData(stack);
+        data.setTime(data.getTime() + 1);
+    }
+
+    @Override
+    public int getSpellColor(ItemStack stack) {
+        return getSpellColorValue(stack);
+    }
+/*
+    @Override
+    public boolean craft(ItemStack cad, EntityPlayer player, PieceCraftingTrick trick) {
+        return false;
+    }
+*/
     private static boolean canCast(ItemStack cad, Spell spell) {
         try {
             CompiledSpell compiled = new SpellCompiler().compile(spell);
@@ -237,7 +358,7 @@ public class ItemCAD extends Item {
     private static String componentName(ItemStack stack) {
         return stack == null ? ""
             : stack.getUnlocalizedName()
-                .replace("item.psi.", "");
+            .replace("item.psi.", "");
     }
 
     private static String componentDisplayName(ItemStack stack, String key) {
@@ -267,12 +388,12 @@ public class ItemCAD extends Item {
         ItemCADComponent component = component(stack, key);
         if (component != null) for (Map.Entry<String, Integer> stat : component.getStats()
             .entrySet()) {
-                String value = stat.getValue()
-                    .intValue() == -1 ? "Infinity"
-                        : stat.getValue()
-                            .toString();
-                tooltip.add(" " + EnumChatFormatting.AQUA + stat.getKey() + EnumChatFormatting.GRAY + ": " + value);
-            }
+            String value = stat.getValue()
+                .intValue() == -1 ? "Infinity"
+                : stat.getValue()
+                .toString();
+            tooltip.add(" " + EnumChatFormatting.AQUA + stat.getKey() + EnumChatFormatting.GRAY + ": " + value);
+        }
     }
 
     @Override
@@ -412,7 +533,7 @@ public class ItemCAD extends Item {
                 new ChatComponentText(
                     EnumChatFormatting.RED + "[Psi Error] "
                         + e.getClass()
-                            .getSimpleName()
+                        .getSimpleName()
                         + ": "
                         + e.getMessage()));
             e.printStackTrace();
@@ -428,7 +549,7 @@ public class ItemCAD extends Item {
         if (efficiency == -1) return 0;
         double result = efficiency <= 0 ? raw : raw / (efficiency / 100D);
         if (bullet != null && bullet.getItem() instanceof ItemSpellBullet)
-            result *= ((ItemSpellBullet) bullet.getItem()).getCostModifier();
+            result *= ((ItemSpellBullet) bullet.getItem()).getCostModifier(bullet);
         return (int) result;
     }
 
@@ -469,14 +590,14 @@ public class ItemCAD extends Item {
             }
         } else if (stack != null && stack.hasTagCompound()
             && stack.getTagCompound()
-                .hasKey(TAG_ASSEMBLY)) {
-                    tooltip.add(
-                        EnumChatFormatting.GRAY + "Hold "
-                            + EnumChatFormatting.AQUA
-                            + "SHIFT"
-                            + EnumChatFormatting.GRAY
-                            + " for more info");
-                }
+            .hasKey(TAG_ASSEMBLY)) {
+            tooltip.add(
+                EnumChatFormatting.GRAY + "Hold "
+                    + EnumChatFormatting.AQUA
+                    + "SHIFT"
+                    + EnumChatFormatting.GRAY
+                    + " for more info");
+        }
     }
 
     /**
@@ -518,3 +639,4 @@ public class ItemCAD extends Item {
         nbt.setTag(TAG_SPELL, spellNbt);
     }
 }
+

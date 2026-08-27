@@ -3,6 +3,7 @@ package vazkii.psi.client.render;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.IItemRenderer;
 
+import vazkii.psi.api.cad.ICAD;
 import vazkii.psi.client.model.cad.CadBakedModel;
 import vazkii.psi.client.model.cad.CadMaterial;
 import vazkii.psi.client.model.cad.CadModels;
@@ -52,7 +53,9 @@ public class RenderItemCAD implements IItemRenderer {
             model = CadModels.cad();
         }
 
-        CadRenderer
-            .render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), ItemCAD.getSpellColor(item));
+        // item.getItem() is always an ICAD here - this renderer is only ever registered for CAD items.
+        ICAD cad = (ICAD) item.getItem();
+
+        CadRenderer.render(model, CadMaterial.forAssembly(assembly), CadRenderContext.of(type), cad.getSpellColor(item));
     }
 }

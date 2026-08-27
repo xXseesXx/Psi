@@ -20,15 +20,16 @@ import vazkii.psi.common.item.component.ItemCADSocket;
 public class TileCADAssembler extends TileEntity implements IInventory {
 
     public static final int MAGAZINE_SLOTS = 12;
-    public static final int SLOT_CAD = 0;
-    public static final int SLOT_ASSEMBLY = 1;
-    public static final int SLOT_CORE = 2;
-    public static final int SLOT_SOCKET = 3;
-    public static final int SLOT_BATTERY = 4;
-    public static final int SLOT_BULLET_START = 5;
-    public static final int SLOT_OUTPUT = SLOT_BULLET_START + MAGAZINE_SLOTS;
-    public static final int SLOT_DYE = SLOT_OUTPUT + 1;
-    private final ItemStack[] inventory = new ItemStack[SLOT_DYE + 1];
+    public static final int SLOT_OUTPUT = 0;
+    public static final int SLOT_CAD = 1;
+    public static final int SLOT_ASSEMBLY = 2;
+    public static final int SLOT_CORE = 3;
+    public static final int SLOT_SOCKET = 4;
+    public static final int SLOT_BATTERY = 5;
+    public static final int SLOT_DYE = 6;
+    public static final int SLOT_BULLET_START = 7;
+    public static final int SLOT_BULLET_END = SLOT_BULLET_START + MAGAZINE_SLOTS;
+    private final ItemStack[] inventory = new ItemStack[SLOT_BULLET_END];
 
     @Override
     public int getSizeInventory() {
@@ -107,15 +108,15 @@ public class TileCADAssembler extends TileEntity implements IInventory {
         if (slot == SLOT_SOCKET) return stack.getItem() instanceof ItemCADSocket;
         if (slot == SLOT_BATTERY) return stack.getItem() instanceof ItemCADBattery;
         if (slot == SLOT_DYE) return stack.getItem() instanceof ICADColorizer;
-        return slot >= SLOT_BULLET_START && slot < SLOT_OUTPUT
+        return slot >= SLOT_BULLET_START && slot < SLOT_BULLET_END
             && stack.getItem() instanceof ItemSpellBullet
             && isBulletSlotEnabled(slot - SLOT_BULLET_START);
     }
 
     private void changed(int slot) {
         if (slot == SLOT_CAD) loadMagazine();
-        else if (slot >= SLOT_BULLET_START && slot < SLOT_OUTPUT) saveMagazineSlot(slot);
-        if (slot >= SLOT_ASSEMBLY && slot <= SLOT_BATTERY || slot == SLOT_DYE) {
+        else if (slot >= SLOT_BULLET_START && slot < SLOT_BULLET_END) saveMagazineSlot(slot);
+        if ((slot >= SLOT_ASSEMBLY && slot <= SLOT_BATTERY) || slot == SLOT_DYE) {
             inventory[SLOT_OUTPUT] = null;
             updateCraftResult();
         }
@@ -156,7 +157,7 @@ public class TileCADAssembler extends TileEntity implements IInventory {
             ItemStack cad = inventory[SLOT_CAD];
             inventory[SLOT_BULLET_START + i] = cad != null && isBulletSlotEnabled(i)
                 ? (cad.getItem() instanceof ItemCreativeCAD ? ItemCreativeCAD.getBullet(cad, i)
-                    : ItemCAD.getBullet(cad, i))
+                : ItemCAD.getBullet(cad, i))
                 : null;
         }
     }
@@ -193,10 +194,37 @@ public class TileCADAssembler extends TileEntity implements IInventory {
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
         NBTTagList list = tag.getTagList("Items", 10);
+
+        boolean legacyLayout = false;
+        for (int i = 0; i < list.tagCount(); i++) {
+            int slot = list.getCompoundTagAt(i).getByte("Slot") & 255;
+            if (slot == 17 || slot == 18 || (slot >= 5 && slot <= 16)) {
+                legacyLayout = true;
+                break;
+            }
+        }
+
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound item = list.getCompoundTagAt(i);
             int slot = item.getByte("Slot") & 255;
-            if (slot < inventory.length) inventory[slot] = ItemStack.loadItemStackFromNBT(item);
+            int targetSlot = legacyLayout ? migrateLegacySlot(slot) : slot;
+            if (targetSlot >= 0 && targetSlot < inventory.length)
+                inventory[targetSlot] = ItemStack.loadItemStackFromNBT(item);
         }
+
+        if (inventory[SLOT_CAD] != null) loadMagazine();
+    }
+
+    private int migrateLegacySlot(int slot) {
+        if (slot == 0) return SLOT_CAD;
+        if (slot == 1) return SLOT_ASSEMBLY;
+        if (slot == 2) return SLOT_CORE;
+        if (slot == 3) return SLOT_SOCKET;
+        if (slot == 4) return SLOT_BATTERY;
+        if (slot >= 5 && slot < 5 + MAGAZINE_SLOTS)
+            return SLOT_BULLET_START + slot - 5;
+        if (slot == 17) return SLOT_OUTPUT;
+        if (slot == 18) return SLOT_DYE;
+        return -1;
     }
 }

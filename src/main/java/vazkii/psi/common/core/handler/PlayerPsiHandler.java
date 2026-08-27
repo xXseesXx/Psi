@@ -7,6 +7,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import vazkii.psi.api.cad.ICAD;
 import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.network.PacketHandler;
 import vazkii.psi.common.network.PacketPsiSync;
@@ -35,7 +36,7 @@ public class PlayerPsiHandler {
 
     public static boolean spend(EntityPlayer player, int cost, ItemStack cad, boolean applyCooldown) {
         int current = get(player);
-        int overflow = cad != null && cad.getItem() instanceof ItemCAD ? ItemCAD.getStoredPsi(cad) : 0;
+        int overflow = cad != null && cad.getItem() instanceof ICAD ? ((ICAD) cad.getItem()).getStoredPsi(cad) : 0;
         if (overflow < 0) overflow = cost;
         if (cost > current + overflow) return false;
         int remainder = Math.max(0, cost - current);
@@ -70,7 +71,7 @@ public class PlayerPsiHandler {
         }
         ItemStack cad = event.player.getHeldItem();
         if (cad != null && cad.getItem() instanceof ItemCAD
-            && ItemCAD.getStoredPsi(cad) < ItemCAD.getStat(cad, "Overflow")) {
+            && ((ICAD) cad.getItem()).getStoredPsi(cad) < ItemCAD.getStat(cad, "Overflow")) {
             ItemCAD.regenStoredPsi(cad, REGEN_PER_TICK);
         } else if (current < MAX_PSI) set(event.player, current + REGEN_PER_TICK);
     }

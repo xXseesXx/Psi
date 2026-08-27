@@ -58,7 +58,7 @@ public class ItemLoopcastSpellBullet extends ItemSpellBullet {
     }
 
     @Override
-    public boolean isCADOnlyContainer() {
+    public boolean isCADOnlyContainer(ItemStack stack) {
         return true;
     }
 }

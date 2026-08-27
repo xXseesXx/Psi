@@ -6,12 +6,14 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import vazkii.psi.api.cad.ICAD;
+import vazkii.psi.api.cad.ICADColorizer;
 import vazkii.psi.client.render.entity.RenderSpellCircle;
-import vazkii.psi.common.item.ItemCAD;
 
 /** Client-side tracking and rendering for the circle at a loopcaster's feet. */
 public class LoopcastRenderHandler {
@@ -65,7 +67,7 @@ public class LoopcastRenderHandler {
         Long start = LOOPCASTERS.get(entityId);
         if (start != null) {
             multiplier = Math.min(5F, time - start) / 5F;
-            color = ItemCAD.getSpellColor(player.getHeldItem());
+            color = spellColorOf(player);
             LOOPCAST_COLORS.put(entityId, color);
         } else {
             Long fadeStart = FADING_LOOPCASTERS.get(entityId);
@@ -77,9 +79,20 @@ public class LoopcastRenderHandler {
                 return;
             }
             Integer cached = LOOPCAST_COLORS.get(entityId);
-            color = cached == null ? ItemCAD.getSpellColor(player.getHeldItem()) : cached.intValue();
+            color = cached == null ? spellColorOf(player) : cached.intValue();
         }
         RenderSpellCircle.renderCircle(x, y, z, player.ticksExisted, 0.75F * multiplier, color);
+    }
+
+    /** getSpellColor now lives on ICAD as an instance method; fall back to the default spell
+     *  color if the player somehow isn't holding a CAD when this is called (e.g. loopcast state
+     *  hasn't caught up with a hotbar swap yet). */
+    private static int spellColorOf(EntityPlayer player) {
+        ItemStack held = player.getHeldItem();
+        if (held != null && held.getItem() instanceof ICAD) {
+            return ((ICAD) held.getItem()).getSpellColor(held);
+        }
+        return ICADColorizer.DEFAULT_SPELL_COLOR;
     }
 
     private static long currentTime() {

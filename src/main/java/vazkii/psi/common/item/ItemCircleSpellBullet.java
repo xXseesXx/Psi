@@ -26,7 +26,7 @@ public class ItemCircleSpellBullet extends ItemSpellBullet {
     }
 
     @Override
-    public double getCostModifier() {
+    public double getCostModifier(ItemStack stack) {
         return EntitySpellCircle.CAST_TIMES * .75;
     }
 
@@ -36,7 +36,7 @@ public class ItemCircleSpellBullet extends ItemSpellBullet {
     }
 
     @Override
-    public boolean isCADOnlyContainer() {
+    public boolean isCADOnlyContainer(ItemStack stack) {
         return true;
     }
 }
