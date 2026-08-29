@@ -25,7 +25,7 @@ import vazkii.psi.api.spell.param.ParamVector;
 import vazkii.psi.api.spell.piece.PieceTrick;
 import vazkii.psi.common.block.BlockConjured;
 import vazkii.psi.common.block.tile.TileConjured;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 public class PieceTrickConjureBlock extends PieceTrick {
 

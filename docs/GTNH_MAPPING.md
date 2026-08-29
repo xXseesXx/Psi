@@ -69,7 +69,7 @@ All `common/lib/*` now 1:1 with modern: `LibPieceNames.java:11` 190, `LibPieceGr
 Keep modern imports commented where replaced:
 ```java
 // modern: import net.minecraft.core.BlockPos;
-// GTNH: import vazkii.psi.compampac.BlockPosCompat;
+// GTNH: import vazkii.psi.compatockPosCompat;
 ```
 
 ## Verification

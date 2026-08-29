@@ -15,7 +15,7 @@ package vazkii.psi.api.spell;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import vazkii.psi.api.internal.Vector3;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 public class SpellHelpers {
 

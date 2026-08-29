@@ -21,7 +21,7 @@ import vazkii.psi.api.spell.SpellParam;
 import vazkii.psi.api.spell.SpellRuntimeException;
 import vazkii.psi.api.spell.param.ParamVector;
 import vazkii.psi.api.spell.piece.PieceSelector;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 public class PieceSelectorBlockPresence extends PieceSelector {
 

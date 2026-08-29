@@ -6,6 +6,8 @@
 package vazkii.psi.common.spell.selector.entity;
 
 import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
+import vazkii.psi.api.spell.piece.PieceSelector;
 
 public class PieceSelectorSuccessCounter extends PieceSelector {
 

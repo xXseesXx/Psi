@@ -1,0 +1,2 @@
+fixed block collapse trick
+fixed comparator operator

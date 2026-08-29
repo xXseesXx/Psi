@@ -5,7 +5,13 @@
  */
 package vazkii.psi.common.spell.selector.entity;
 
+import java.util.function.Predicate;
+
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityItem;
+
+import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
 
 public class PieceSelectorNearbyItems extends PieceSelectorNearby {
 

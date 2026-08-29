@@ -20,7 +20,7 @@ import vazkii.psi.api.spell.SpellRuntimeException;
 import vazkii.psi.api.spell.param.ParamNumber;
 import vazkii.psi.api.spell.param.ParamVector;
 import vazkii.psi.api.spell.piece.PieceTrick;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 public class PieceTrickBreakInSequence extends PieceTrick {
 

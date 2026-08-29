@@ -14,12 +14,12 @@ import java.math.RoundingMode;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Vec3;
 
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 /**
  * 3D Vector class for Psi spell calculations.
  * Backported to 1.7.10 from 1.21.1.
- * 
+ *
  * This is a mutable vector class - operations modify the vector in place
  * and return 'this' for chaining.
  */

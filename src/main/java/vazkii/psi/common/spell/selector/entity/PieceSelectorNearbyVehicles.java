@@ -4,7 +4,14 @@
  */
 package vazkii.psi.common.spell.selector.entity;
 
+import java.util.function.Predicate;
+
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityBoat;
+import net.minecraft.entity.item.EntityMinecart;
+
+import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
 
 public class PieceSelectorNearbyVehicles extends PieceSelectorNearby {
 

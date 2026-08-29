@@ -5,16 +5,16 @@
  * Psi is Open Source and distributed under the
  * Psi License: https://psi.vazkii.net/license.php
  */
-package vazkii.psi.compampac;
+package vazkii.psi.compat;
 
 import net.minecraft.util.ResourceLocation;
 
 /**
  * Compatibility wrapper for ResourceLocation creation.
- * 
+ *
  * Modern Minecraft (1.21+) uses ResourceLocation.fromNamespaceAndPath(namespace, path)
  * while 1.7.10 uses direct constructor new ResourceLocation(namespace, path).
- * 
+ *
  * This class provides a consistent API across versions.
  */
 public class ResourceLocationCompat {

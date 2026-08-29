@@ -217,7 +217,7 @@ error: package net.minecraft.world.entity does not exist
 **Errors:**
 ```
 error: cannot find symbol
-  import vazkii.psi.compampac.BlockPosCompatCompat;
+  import vazkii.psi.compat.BlockPosCompatCompat;
                              ^
   symbol: class BlockPosCompatCompat
 ```
@@ -384,7 +384,7 @@ error: cannot find symbol method getBlockPosCompat / isInside / getDirection (Bl
 ### 10 files: `Blaze`, `BreakLoop`, `DebugSpamless`, `Detonate`, `EidosAnchor`, `EidosReversal`, `Overgrow`, `ParticleTrail`, `PlaySound`, `RussianRoulette`
 **Errors:**
 ```
-error: cannot find symbol import vazkii.psi.compampac.BlockPosCompatCompat
+error: cannot find symbol import vazkii.psi.compat.BlockPosCompatCompat
   BlockPosCompatCompat (double replace BlockPos→BlockPosCompat on already-patched file)
 error: cannot find symbol method getCommandSenderWorld / level() / getBlockState
 error: package net.neoforged.neoforge.common.NeoForge / BlockEvent / BlockSnapshot

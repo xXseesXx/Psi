@@ -18,11 +18,11 @@ import net.minecraft.item.ItemStack;
 
 import vazkii.psi.api.internal.MathHelper;
 import vazkii.psi.api.internal.Vector3;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 /**
  * Context for a spell. Used for casting it.
- * 
+ *
  * 1.7.10 Backport: Simplified for barebones functionality.
  * Removed: tool context, armor context, loopcast details, compiled spell cache.
  */

@@ -4,7 +4,15 @@
  */
 package vazkii.psi.common.spell.selector.entity;
 
+import java.util.function.Predicate;
+
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.FurnaceRecipes;
+
+import vazkii.psi.api.spell.Spell;
+import vazkii.psi.api.spell.SpellContext;
 
 public class PieceSelectorNearbySmeltables extends PieceSelectorNearby {
 

@@ -5,14 +5,14 @@
  * Psi is Open Source and distributed under the
  * Psi License: https://psi.vazkii.net/license.php
  */
-package vazkii.psi.compampac;
+package vazkii.psi.compat;
 
 import net.minecraftforge.common.util.ForgeDirection;
 
 /**
  * Compatibility class for BlockPos, which doesn't exist in 1.7.10.
  * This is an immutable class representing a block position in 3D space.
- * 
+ *
  * In modern Minecraft (1.8+), BlockPos is a core class. For 1.7.10, we recreate
  * its functionality here.
  */

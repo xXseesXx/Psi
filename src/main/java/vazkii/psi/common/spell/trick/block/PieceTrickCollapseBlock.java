@@ -4,12 +4,15 @@
  * https://github.com/Vazkii/Psi
  * Psi is Open Source and distributed under the
  * Psi License: https://psi.vazkii.net/license.php
- * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common\spell\trick\block\PieceTrickCollapseBlock.java:1
- * GTNH: World falling block via BlockFalling.
+ * 1.7.10 Backport: Based on Psi-1.21.1/src/main/java/vazkii/psi/common/spell/trick/block/PieceTrickCollapseBlock.java:1
+ * GTNH: Collapse blocks using vanilla EntityFallingBlock, regardless of
+ * whether the block itself extends BlockFalling.
  */
 package vazkii.psi.common.spell.trick.block;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.item.EntityFallingBlock;
+import net.minecraft.world.World;
 
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.Spell;
@@ -18,7 +21,7 @@ import vazkii.psi.api.spell.SpellParam;
 import vazkii.psi.api.spell.SpellRuntimeException;
 import vazkii.psi.api.spell.param.ParamVector;
 import vazkii.psi.api.spell.piece.PieceTrick;
-import vazkii.psi.compampac.BlockPosCompat;
+import vazkii.psi.compat.BlockPosCompat;
 
 public class PieceTrickCollapseBlock extends PieceTrick {
 
@@ -36,33 +39,46 @@ public class PieceTrickCollapseBlock extends PieceTrick {
     @Override
     public Object execute(SpellContext context) throws SpellRuntimeException {
         Vector3 posVal = this.getParamValue(context, position);
+
         if (posVal == null) throw new SpellRuntimeException(SpellRuntimeException.NULL_VECTOR);
+
         if (!context.isInRadius(posVal)) throw new SpellRuntimeException(SpellRuntimeException.OUTSIDE_RADIUS);
+
         BlockPosCompat pos = posVal.toBlockPos();
-        net.minecraft.world.World world = context.focalPoint.worldObj;
+        World world = context.focalPoint.worldObj;
+
         Block block = world.getBlock(pos.x, pos.y, pos.z);
         int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
-        // GTNH: modern checks stateDown.isAir() && getDestroySpeed != -1 && canHarvest && no tile + BreakEvent
-        // Serviceable: if below is air and block is not unbreakable and no tile, spawn falling — on server only, with
-        // correct spawn order
+
+        /*
+         * Only collapse blocks that have empty space directly underneath.
+         * EntityFallingBlock in 1.7.10 can represent ANY block. The block
+         * does not need to extend BlockFalling.
+         */
         if (world.isAirBlock(pos.x, pos.y - 1, pos.z) && block.getBlockHardness(world, pos.x, pos.y, pos.z) != -1
             && world.getTileEntity(pos.x, pos.y, pos.z) == null) {
+
+            /*
+             * Falling entities are server-side.
+             * IMPORTANT:
+             * Do NOT remove the original block here.
+             * Vanilla EntityFallingBlock checks on its first tick that
+             * the block still exists at its starting position. It then
+             * removes the block itself.
+             */
             if (!world.isRemote) {
-                net.minecraft.entity.item.EntityFallingBlock falling = new net.minecraft.entity.item.EntityFallingBlock(
+                EntityFallingBlock falling = new EntityFallingBlock(
                     world,
-                    pos.x + 0.5,
-                    pos.y + 0.5,
-                    pos.z + 0.5,
+                    pos.x + 0.5D,
+                    pos.y + 0.5D,
+                    pos.z + 0.5D,
                     block,
                     meta);
-                world.setBlockToAir(pos.x, pos.y, pos.z);
+
                 world.spawnEntityInWorld(falling);
-                world.markBlockForUpdate(pos.x, pos.y, pos.z);
-                world.markBlockForUpdate(pos.x, pos.y - 1, pos.z);
-            } else {
-                world.setBlockToAir(pos.x, pos.y, pos.z);
             }
         }
+
         return null;
     }
 }
