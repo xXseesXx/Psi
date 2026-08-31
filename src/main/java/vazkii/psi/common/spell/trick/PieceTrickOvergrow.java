@@ -9,8 +9,10 @@
  */
 package vazkii.psi.common.spell.trick;
 
-import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemDye;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 import vazkii.psi.api.internal.Vector3;
 import vazkii.psi.api.spell.Spell;
@@ -37,17 +39,23 @@ public class PieceTrickOvergrow extends PieceTrick {
     @Override
     public Object execute(SpellContext context) throws SpellRuntimeException {
         Vector3 posVal = this.getParamValue(context, position);
+
         if (posVal == null) throw new SpellRuntimeException(SpellRuntimeException.NULL_VECTOR);
+
         if (!context.isInRadius(posVal)) throw new SpellRuntimeException(SpellRuntimeException.OUTSIDE_RADIUS);
+
         BlockPosCompat pos = posVal.toBlockPos();
-        // GTNH: apply bonemeal if possible
-        ItemDye.applyBonemeal(
-            new net.minecraft.item.ItemStack(Blocks.sapling),
-            context.focalPoint.worldObj,
-            pos.x,
-            pos.y,
-            pos.z,
-            context.caster);
+        World world = context.focalPoint.worldObj;
+
+        ItemStack boneMeal = new ItemStack(Items.dye, 1, 15);
+
+        if (ItemDye.applyBonemeal(boneMeal, world, pos.x, pos.y, pos.z, context.caster)) {
+
+            if (!world.isRemote) {
+                world.playAuxSFX(2005, pos.x, pos.y, pos.z, 0);
+            }
+        }
+
         return null;
     }
 }

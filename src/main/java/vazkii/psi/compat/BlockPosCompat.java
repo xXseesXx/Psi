@@ -12,7 +12,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 /**
  * Compatibility class for BlockPos, which doesn't exist in 1.7.10.
  * This is an immutable class representing a block position in 3D space.
- *
  * In modern Minecraft (1.8+), BlockPos is a core class. For 1.7.10, we recreate
  * its functionality here.
  */
@@ -149,7 +148,7 @@ public class BlockPosCompat {
     public double distanceSquared(BlockPosCompat other) {
         double dx = x - other.x;
         double dy = y - other.y;
-        double dz = other.z - other.z;
+        double dz = z - other.z;
         return dx * dx + dy * dy + dz * dz;
     }
 
@@ -165,10 +164,9 @@ public class BlockPosCompat {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof BlockPosCompat)) {
+        if (!(obj instanceof BlockPosCompat other)) {
             return false;
         }
-        BlockPosCompat other = (BlockPosCompat) obj;
         return x == other.x && y == other.y && z == other.z;
     }
 

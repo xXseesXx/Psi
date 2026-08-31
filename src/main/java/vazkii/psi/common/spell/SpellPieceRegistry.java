@@ -245,7 +245,7 @@ public class SpellPieceRegistry {
      */
     public static void init() {
         // Constants
-        register("psi:constant_number", PieceConstantNumber::new);
+        register("psi:" + LibPieceNames.CONSTANT_NUMBER, PieceConstantNumber::new);
         register("psi:constant_string", PieceConstantString::new);
         register("psi:" + LibPieceNames.CONSTANT_PI, PieceConstantPi::new);
         register("psi:" + LibPieceNames.CONSTANT_E, PieceConstantE::new);
@@ -277,13 +277,13 @@ public class SpellPieceRegistry {
         register("psi:" + LibPieceNames.OPERATOR_ROOT, PieceOperatorRoot::new);
         register("psi:" + LibPieceNames.OPERATOR_GAMMA_FUNCTION, PieceOperatorGammaFunc::new);
         // trig
-        register("psi:operator_sin", PieceOperatorSin::new);
-        register("psi:operator_cos", PieceOperatorCos::new);
-        register("psi:operator_asin", PieceOperatorAsin::new);
-        register("psi:operator_acos", PieceOperatorAcos::new);
+        register("psi:" + LibPieceNames.OPERATOR_SIN, PieceOperatorSin::new);
+        register("psi:" + LibPieceNames.OPERATOR_COS, PieceOperatorCos::new);
+        register("psi:" + LibPieceNames.OPERATOR_ASIN, PieceOperatorAsin::new);
+        register("psi:" + LibPieceNames.OPERATOR_ACOS, PieceOperatorAcos::new);
 
-        register("psi:operator_entity_position", PieceOperatorEntityPosition::new);
-        register("psi:operator_entity_look", PieceOperatorEntityLook::new);
+        register("psi:" + LibPieceNames.OPERATOR_ENTITY_POSITION, PieceOperatorEntityPosition::new);
+        register("psi:" + LibPieceNames.OPERATOR_ENTITY_LOOK, PieceOperatorEntityLook::new);
         register("psi:" + LibPieceNames.OPERATOR_ENTITY_HEALTH, PieceOperatorEntityHealth::new);
         register("psi:" + LibPieceNames.OPERATOR_ENTITY_HEIGHT, PieceOperatorEntityHeight::new);
         register("psi:" + LibPieceNames.OPERATOR_ENTITY_MOTION, PieceOperatorEntityMotion::new);
@@ -314,7 +314,7 @@ public class SpellPieceRegistry {
         register("psi:" + LibPieceNames.OPERATOR_VECTOR_MINIMUM, PieceOperatorVectorMinimum::new);
         register("psi:" + LibPieceNames.OPERATOR_VECTOR_SIGNUM, PieceOperatorVectorSignum::new);
         register("psi:" + LibPieceNames.OPERATOR_VECTOR_ABSOLUTE, PieceOperatorVectorAbsolute::new);
-        register("psi:operator_vector_rotate", PieceOperatorVectorRotate::new);
+        register("psi:" + LibPieceNames.OPERATOR_VECTOR_ROTATE, PieceOperatorVectorRotate::new);
         register("psi:" + LibPieceNames.OPERATOR_VECTOR_RAYCAST_AXIS, PieceOperatorVectorRaycastAxis::new);
         register("psi:" + LibPieceNames.OPERATOR_VECTOR_RAYCAST, PieceOperatorVectorRaycast::new); // flat existing,
                                                                                                    // vector package
@@ -334,7 +334,7 @@ public class SpellPieceRegistry {
         // block operators deferred — see Phase 4 block pass
 
         // Selectors
-        register("psi:selector_caster", PieceSelectorCaster::new);
+        register("psi:" + LibPieceNames.SELECTOR_CASTER, PieceSelectorCaster::new);
         register("psi:selector_raycast", PieceSelectorRaycast::new);
         register("psi:selector_entity_position", PieceSelectorEntityPosition::new);
         register("psi:" + LibPieceNames.SELECTOR_FOCAL_POINT, PieceSelectorFocalPoint::new);
@@ -371,9 +371,9 @@ public class SpellPieceRegistry {
         register("psi:" + LibPieceNames.SELECTOR_SUCCESS_COUNTER, PieceSelectorSuccessCounter::new);
 
         // Tricks
-        register("psi:trick_debug", PieceTrickDebug::new);
-        register("psi:trick_break_block", PieceTrickBreakBlock::new);
-        register("psi:trick_explode", PieceTrickExplode::new);
+        register("psi:" + LibPieceNames.TRICK_DEBUG, PieceTrickDebug::new);
+        register("psi:" + LibPieceNames.TRICK_BREAK_BLOCK, PieceTrickBreakBlock::new);
+        register("psi:" + LibPieceNames.TRICK_EXPLODE, PieceTrickExplode::new);
         register("psi:" + LibPieceNames.TRICK_DIE, PieceTrickDie::new);
         register("psi:" + LibPieceNames.TRICK_EVALUATE, PieceTrickEvaluate::new);
         register("psi:" + LibPieceNames.TRICK_SAVE_VECTOR, PieceTrickSaveVector::new);
