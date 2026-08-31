@@ -76,11 +76,17 @@ public abstract class SpellParam<T> {
     public final String name;
     public final int color;
     public final boolean canDisable;
+    public final ArrowType arrowType;
 
     public SpellParam(String name, int color, boolean canDisable) {
+        this(name, color, canDisable, ArrowType.IN);
+    }
+
+    public SpellParam(String name, int color, boolean canDisable, ArrowType arrowType) {
         this.name = name;
         this.color = color;
         this.canDisable = canDisable;
+        this.arrowType = arrowType;
     }
 
     /**
@@ -119,10 +125,21 @@ public abstract class SpellParam<T> {
             && (!requiresConstant() || piece.getPieceType() == EnumPieceType.CONSTANT);
     }
 
+    public ArrowType getArrowType() {
+        return arrowType;
+    }
+
     /**
      * Empty helper class for use with required types when any type is accepted.
      */
     public static class Any {
+    }
+
+    /** Rendering direction for a parameter's edge arrow. */
+    public enum ArrowType {
+        NONE,
+        OUT,
+        IN
     }
 
     /**

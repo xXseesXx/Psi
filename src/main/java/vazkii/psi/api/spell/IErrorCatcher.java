@@ -6,4 +6,8 @@ package vazkii.psi.api.spell;
 public interface IErrorCatcher {
 
     boolean catchException(SpellPiece errorPiece, SpellContext context, SpellRuntimeException exception);
+
+    Object supplyReplacementValue(SpellPiece errorPiece, SpellContext context, SpellRuntimeException exception);
+
+    boolean catchParam(SpellParam<?> param);
 }

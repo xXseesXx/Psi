@@ -15,6 +15,10 @@ import vazkii.psi.common.spell.constant.PieceConstantPi;
 import vazkii.psi.common.spell.constant.PieceConstantString;
 import vazkii.psi.common.spell.constant.PieceConstantTau;
 import vazkii.psi.common.spell.constant.PieceConstantWrapper;
+import vazkii.psi.common.spell.other.PieceConnector;
+import vazkii.psi.common.spell.other.PieceCrossConnector;
+import vazkii.psi.common.spell.other.PieceErrorCatch;
+import vazkii.psi.common.spell.other.PieceErrorSuppressor;
 import vazkii.psi.common.spell.operator.PieceOperatorSum;
 import vazkii.psi.common.spell.operator.block.PieceOperatorBlockComparatorStrength;
 import vazkii.psi.common.spell.operator.block.PieceOperatorBlockHardness;
@@ -244,6 +248,10 @@ public class SpellPieceRegistry {
      * Called on mod init.
      */
     public static void init() {
+        register("psi:" + LibPieceNames.CONNECTOR, PieceConnector::new);
+        register("psi:" + LibPieceNames.CROSS_CONNECTOR, PieceCrossConnector::new);
+        register("psi:" + LibPieceNames.ERROR_SUPPRESSOR, PieceErrorSuppressor::new);
+        register("psi:" + LibPieceNames.ERROR_CATCH, PieceErrorCatch::new);
         // Constants
         register("psi:" + LibPieceNames.CONSTANT_NUMBER, PieceConstantNumber::new);
         register("psi:constant_string", PieceConstantString::new);

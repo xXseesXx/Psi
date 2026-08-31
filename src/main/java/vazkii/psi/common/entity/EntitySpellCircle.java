@@ -49,15 +49,10 @@ public class EntitySpellCircle extends Entity {
             && casts < CAST_TIMES
             && caster != null
             && compiled != null) {
-            try {
-                compiled.execute(
-                    new SpellContext().setPlayer(caster)
-                        .setFocalPoint(this)
-                        .setSpell(spell)
-                        .setLoopcastIndex(casts++));
-            } catch (Exception ignored) {
-                setDead();
-            }
+            compiled.safeExecute(new SpellContext().setPlayer(caster)
+                .setFocalPoint(this)
+                .setCompiledSpell(compiled)
+                .setLoopcastIndex(casts++));
         }
         if (age > (CAST_TIMES + 2) * CAST_DELAY) setDead();
     }

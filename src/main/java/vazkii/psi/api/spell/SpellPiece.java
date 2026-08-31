@@ -95,6 +95,16 @@ public abstract class SpellPiece {
         return s;
     }
 
+    /** Whether this piece accepts a connection on the given side. */
+    public boolean isInputSide(SpellParam.Side side) {
+        return paramSides.containsValue(side);
+    }
+
+    /** Sort key used by the modern piece picker. */
+    public String getSortingName() {
+        return net.minecraft.client.resources.I18n.format(getUnlocalizedName());
+    }
+
     /** Returns the localized programmer name for a spell value type. */
     public static String getDatatypeName(Class<?> type) {
         String key;
@@ -208,21 +218,12 @@ public abstract class SpellPiece {
             return null;
         }
 
-        // Get the piece at this side
-        int targetX = x + side.offx;
-        int targetY = y + side.offy;
-
-        if (!SpellGrid.exists(targetX, targetY)) {
+        try {
+            SpellPiece piece = spell.grid.getPieceAtSideWithRedirections(x, y, side);
+            return piece == null || !param.canAccept(piece) ? null : context.evaluatedObjects[piece.x][piece.y];
+        } catch (SpellCompilationException e) {
             return null;
         }
-
-        SpellPiece piece = spell.grid.gridData[targetX][targetY];
-        if (piece == null || !param.canAccept(piece)) {
-            return null;
-        }
-
-        // Return the evaluated value from the context grid
-        return context.evaluatedObjects[piece.x][piece.y];
     }
 
     /**
@@ -280,11 +281,7 @@ public abstract class SpellPiece {
         SpellParam.Side side = paramSides.get(param);
         if (side == null || !side.isEnabled()) return null;
 
-        int targetX = x + side.offx;
-        int targetY = y + side.offy;
-        if (!SpellGrid.exists(targetX, targetY)) return null;
-
-        SpellPiece piece = spell.grid.gridData[targetX][targetY];
+        SpellPiece piece = spell.grid.getPieceAtSideWithRedirections(x, y, side);
         return piece == null || !param.canAccept(piece) ? null : (T) piece.evaluate();
     }
 

@@ -123,23 +123,10 @@ public final class SpellContext {
         return this;
     }
 
-    /**
-     * Sets the spell and returns itself.
-     * In full implementation, this would compile and cache.
-     * For barebones, just stores the spell directly.
-     */
     public SpellContext setSpell(Spell spell) {
         this.spell = spell;
-        // GTNH: also create compiled wrapper for modern parity (metadata/errorsSuppressed checks)
-        if (spell != null) {
-            try {
-                this.cspell = new CompiledSpell(spell);
-            } catch (Exception e) {
-                this.cspell = null;
-            }
-        } else {
-            this.cspell = null;
-        }
+        try { this.cspell = spell == null ? null : new SpellCompiler().compile(spell); }
+        catch (SpellCompilationException e) { this.cspell = null; }
         return this;
     }
 
@@ -167,7 +154,7 @@ public final class SpellContext {
     }
 
     public boolean isValid() {
-        return (spell != null || cspell != null) && caster != null && focalPoint != null;
+        return cspell != null;
     }
 
     public boolean shouldSuppressErrors() {

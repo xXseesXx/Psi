@@ -45,10 +45,8 @@ public class ItemLoopcastSpellBullet extends ItemSpellBullet {
         if (cad != null && cad.getItem() instanceof ItemCAD
             && !PlayerPsiHandler.spend(caster, ItemCAD.getRealCost(cad, stack, spell), cad, applyCooldown))
             return false;
-        compiled.execute(
-            new SpellContext().setPlayer(caster)
-                .setSpell(spell)
-                .setLoopcastIndex(index));
+        compiled.safeExecute(new SpellContext().setPlayer(caster)
+            .setCompiledSpell(compiled).setLoopcastIndex(index));
         return true;
     }
 

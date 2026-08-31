@@ -26,6 +26,8 @@ import vazkii.psi.common.item.ItemCAD;
 import vazkii.psi.common.item.ItemCreativeCAD;
 import vazkii.psi.common.lib.LibMisc;
 import vazkii.psi.common.spell.constant.PieceConstantNumber;
+import vazkii.psi.common.spell.other.PieceConnector;
+import vazkii.psi.common.spell.other.PieceCrossConnector;
 
 /**
  * 1.7.10 implementation of the modern Psi programmer screen. The historical
@@ -34,6 +36,7 @@ import vazkii.psi.common.spell.constant.PieceConstantNumber;
 public class GuiProgrammer extends GuiScreen {
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("psi", "textures/gui/programmer.png");
+    private static final ResourceLocation CONNECTOR_LINES_TEXTURE = new ResourceLocation("psi", "textures/spell/connector_lines.png");
 
     private final ItemStack cadStack;
     private final TileProgrammer programmer;
@@ -475,6 +478,8 @@ public class GuiProgrammer extends GuiScreen {
         PieceTextureAtlas.getInstance()
             .drawPiece(piece.registryKey.toString(), screenX, screenY);
 
+        drawConnectorLines(piece, screenX, screenY);
+
         // The 6x6 speech-bubble marker is the same programmer-atlas sprite
         // used by modern Psi, positioned slightly beyond the top-left edge.
         if (piece.comment != null && !piece.comment.isEmpty()) {
@@ -491,6 +496,51 @@ public class GuiProgrammer extends GuiScreen {
             int x = screenX + (CELL_SIZE - fontRendererObj.getStringWidth(value)) / 2;
             fontRendererObj.drawStringWithShadow(value, x, screenY + 5, 0xFFFFFF);
         }
+    }
+
+    /** Draws the dynamic connector strokes omitted from the static 16x16 icons. */
+    private void drawConnectorLines(vazkii.psi.api.spell.SpellPiece piece, int screenX, int screenY) {
+        if (piece instanceof PieceConnector) {
+            PieceConnector connector = (PieceConnector) piece;
+            drawConnectorLine(screenX, screenY, connector.getRedirectionSide(), 0xFFFFFF);
+            if (connector.isInGrid) {
+                for (vazkii.psi.api.spell.SpellParam.Side side : vazkii.psi.api.spell.SpellParam.Side.values()) {
+                    if (!side.isEnabled()) continue;
+                    vazkii.psi.api.spell.SpellPiece neighbor = editingSpell.grid.getPieceAtSideSafely(piece.x, piece.y, side);
+                    if (neighbor != null && neighbor.isInputSide(side.getOpposite())) drawConnectorLine(screenX, screenY, side, 0xFFFFFF);
+                }
+            }
+        } else if (piece instanceof PieceCrossConnector) {
+            PieceCrossConnector connector = (PieceCrossConnector) piece;
+            vazkii.psi.api.spell.SpellParam.Side[] sides = connector.getLineSides();
+            int[] colors = connector.getLineColors();
+            for (int i = 0; i < sides.length; i++) drawConnectorLine(screenX, screenY, sides[i], colors[i]);
+        }
+    }
+
+    /** Draws one 16x16 connector-line quadrant, using the modern connector_lines texture layout. */
+    private void drawConnectorLine(int x, int y, vazkii.psi.api.spell.SpellParam.Side side, int color) {
+        if (side == null || !side.isEnabled()) return;
+        float minU = 0F;
+        float minV = 0F;
+        switch (side) {
+            case LEFT: minU = .5F; break;
+            case TOP: minV = .5F; break;
+            case BOTTOM: minU = .5F; minV = .5F; break;
+            default: break;
+        }
+        float maxU = minU + .5F;
+        float maxV = minV + .5F;
+        this.mc.getTextureManager().bindTexture(CONNECTOR_LINES_TEXTURE);
+        net.minecraft.client.renderer.Tessellator tess = net.minecraft.client.renderer.Tessellator.instance;
+        tess.startDrawingQuads();
+        tess.setColorRGBA((color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
+        tess.addVertexWithUV(x, y + 16, zLevel, minU, maxV);
+        tess.addVertexWithUV(x + 16, y + 16, zLevel, maxU, maxV);
+        tess.addVertexWithUV(x + 16, y, zLevel, maxU, minV);
+        tess.addVertexWithUV(x, y, zLevel, minU, minV);
+        tess.draw();
+        GL11.glColor4f(1F, 1F, 1F, 1F);
     }
 
     @Override
@@ -1200,7 +1250,7 @@ public class GuiProgrammer extends GuiScreen {
                     vazkii.psi.api.spell.SpellParam<?> param = entry.getKey();
                     vazkii.psi.api.spell.SpellParam.Side side = entry.getValue();
 
-                    if (!side.isEnabled()) {
+                    if (!side.isEnabled() || param.getArrowType() == vazkii.psi.api.spell.SpellParam.ArrowType.NONE) {
                         continue;
                     }
 
@@ -1226,7 +1276,7 @@ public class GuiProgrammer extends GuiScreen {
                     }
 
                     // Add arrow vertices to batch
-                    addParamArrowToBatch(tess, x, y, side, param.color, percent);
+                    addParamArrowToBatch(tess, x, y, side, param.color, param.getArrowType(), percent);
                 }
             }
         }
@@ -1246,7 +1296,8 @@ public class GuiProgrammer extends GuiScreen {
             if (param == target) {
                 return index;
             }
-            if (piece.paramSides.get(param) == piece.paramSides.get(target)) {
+            if (param.getArrowType() != vazkii.psi.api.spell.SpellParam.ArrowType.NONE
+                && piece.paramSides.get(param) == piece.paramSides.get(target)) {
                 index++;
             }
         }
@@ -1259,7 +1310,7 @@ public class GuiProgrammer extends GuiScreen {
     private int getParamArrowCount(vazkii.psi.api.spell.SpellPiece piece, vazkii.psi.api.spell.SpellParam.Side side) {
         int count = 0;
         for (vazkii.psi.api.spell.SpellParam<?> param : piece.paramSides.keySet()) {
-            if (piece.paramSides.get(param) == side) {
+            if (param.getArrowType() != vazkii.psi.api.spell.SpellParam.ArrowType.NONE && piece.paramSides.get(param) == side) {
                 count++;
             }
         }
@@ -1270,7 +1321,8 @@ public class GuiProgrammer extends GuiScreen {
      * Add a single parameter arrow to the Tessellator batch.
      */
     private void addParamArrowToBatch(net.minecraft.client.renderer.Tessellator tess, int pieceX, int pieceY,
-        vazkii.psi.api.spell.SpellParam.Side side, int color, float percent) {
+        vazkii.psi.api.spell.SpellParam.Side side, int color, vazkii.psi.api.spell.SpellParam.ArrowType arrowType, float percent) {
+        if (arrowType == vazkii.psi.api.spell.SpellParam.ArrowType.NONE) return;
         // Calculate position on the edge of the piece
         // side.minx/miny/maxx/maxy define the bounding box for arrow placement
         float minX = 4 + side.minx * percent + side.maxx * (1 - percent);
@@ -1286,6 +1338,8 @@ public class GuiProgrammer extends GuiScreen {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
+
+        if (arrowType == vazkii.psi.api.spell.SpellParam.ArrowType.OUT) side = side.getOpposite();
 
         // Texture coordinates for the arrow sprite (8x8 pixels)
         float minU = side.u / 256.0F;

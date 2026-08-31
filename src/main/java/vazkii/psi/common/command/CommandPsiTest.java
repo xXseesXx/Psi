@@ -143,17 +143,15 @@ public class CommandPsiTest extends CommandBase {
             // Create context and execute
             SpellContext context = new SpellContext();
             context.setPlayer(player);
-            context.setSpell(spell);
+            context.setCompiledSpell(compiled);
 
-            compiled.execute(context);
+            compiled.safeExecute(context);
 
             // Success feedback
             sender.addChatMessage(
                 new ChatComponentText(
                     EnumChatFormatting.GREEN + "[Psi] " + EnumChatFormatting.RESET + "Spell executed successfully"));
 
-        } catch (SpellRuntimeException e) {
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
             sender.addChatMessage(
                 new ChatComponentText(
@@ -243,9 +241,9 @@ public class CommandPsiTest extends CommandBase {
 
             SpellContext context = new SpellContext();
             context.setPlayer(player);
-            context.setSpell(spell);
+            context.setCompiledSpell(compiled);
 
-            compiled.execute(context);
+            compiled.safeExecute(context);
 
             // Success feedback
             sender.addChatMessage(
@@ -257,8 +255,6 @@ public class CommandPsiTest extends CommandBase {
         } catch (SpellCompilationException e) {
             sender.addChatMessage(
                 new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
-        } catch (SpellRuntimeException e) {
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
             sender.addChatMessage(
                 new ChatComponentText(
@@ -320,9 +316,9 @@ public class CommandPsiTest extends CommandBase {
 
             SpellContext context = new SpellContext();
             context.setPlayer(player);
-            context.setSpell(spell);
+            context.setCompiledSpell(compiled);
 
-            compiled.execute(context);
+            compiled.safeExecute(context);
 
             // Success feedback
             sender.addChatMessage(
@@ -334,8 +330,6 @@ public class CommandPsiTest extends CommandBase {
         } catch (SpellCompilationException e) {
             sender.addChatMessage(
                 new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
-        } catch (SpellRuntimeException e) {
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
             sender.addChatMessage(
                 new ChatComponentText(
@@ -410,9 +404,9 @@ public class CommandPsiTest extends CommandBase {
 
             SpellContext context = new SpellContext();
             context.setPlayer(player);
-            context.setSpell(spell);
+            context.setCompiledSpell(compiled);
 
-            compiled.execute(context);
+            compiled.safeExecute(context);
 
             // Success message
             sender.addChatMessage(
@@ -421,8 +415,6 @@ public class CommandPsiTest extends CommandBase {
         } catch (SpellCompilationException e) {
             sender.addChatMessage(
                 new ChatComponentText(EnumChatFormatting.RED + "[Psi Compilation Error] " + e.getMessage()));
-        } catch (SpellRuntimeException e) {
-            sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Psi Error] " + e.getMessage()));
         } catch (Exception e) {
             sender.addChatMessage(
                 new ChatComponentText(

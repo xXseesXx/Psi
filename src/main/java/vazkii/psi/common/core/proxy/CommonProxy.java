@@ -22,6 +22,7 @@ import vazkii.psi.common.core.PsiCreativeTab;
 import vazkii.psi.common.core.handler.ConfigHandler;
 import vazkii.psi.common.core.handler.GuiHandler;
 import vazkii.psi.common.core.handler.LoopcastHandler;
+import vazkii.psi.common.core.handler.SpellExecutionHandler;
 import vazkii.psi.common.core.handler.PlayerPsiHandler;
 import vazkii.psi.common.entity.EntitySpellCharge;
 import vazkii.psi.common.entity.EntitySpellCircle;
@@ -299,6 +300,9 @@ public class CommonProxy {
         FMLCommonHandler.instance()
             .bus()
             .register(new LoopcastHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new SpellExecutionHandler());
         FMLCommonHandler.instance()
             .bus()
             .register(new PlayerPsiHandler());

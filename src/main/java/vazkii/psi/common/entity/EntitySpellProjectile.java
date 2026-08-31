@@ -173,24 +173,14 @@ public class EntitySpellProjectile extends EntityThrowable {
             SpellContext context = new SpellContext();
             context.caster = caster;
             context.focalPoint = this; // Use the projectile as focal point
-            context.spell = spell;
+            context.setCompiledSpell(compiledSpell);
 
             // If we hit an entity, store it in customData for tricks to use
             if (hitEntity != null) {
                 context.customData.put("psi:hitEntity", hitEntity);
             }
 
-            // Execute the spell
-            try {
-                compiledSpell.execute(context);
-            } catch (vazkii.psi.api.spell.SpellRuntimeException e) {
-                caster.addChatMessage(
-                    new net.minecraft.util.ChatComponentText(
-                        net.minecraft.util.EnumChatFormatting.RED + e.getTranslatedMessage()));
-            } catch (Exception e) {
-                System.err.println("[Psi] Error executing spell from projectile: " + e.getMessage());
-                e.printStackTrace();
-            }
+            compiledSpell.safeExecute(context);
         }
 
     }

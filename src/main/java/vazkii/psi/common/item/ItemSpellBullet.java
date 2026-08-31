@@ -71,9 +71,7 @@ public class ItemSpellBullet extends Item {
         }
 
         CompiledSpell compiled = new SpellCompiler().compile(spell);
-        compiled.execute(
-            new SpellContext().setPlayer(caster)
-                .setSpell(spell));
+        compiled.safeExecute(new SpellContext().setPlayer(caster).setCompiledSpell(compiled));
     }
 
     public ArrayList<Entity> castSpell(ItemStack stack, SpellContext context) {
@@ -86,8 +84,8 @@ public class ItemSpellBullet extends Item {
 
             CompiledSpell compiled = new SpellCompiler().compile(spell);
 
-            context.setSpell(spell);
-            compiled.execute(context);
+            context.setCompiledSpell(compiled);
+            compiled.safeExecute(context);
         } catch (Exception ignored) {}
 
         return new ArrayList<Entity>();

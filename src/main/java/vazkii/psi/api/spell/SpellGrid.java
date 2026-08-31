@@ -7,6 +7,9 @@
  */
 package vazkii.psi.api.spell;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Holder class for a spell's piece grid.
  * Barebones version for 1.7.10 - just the grid data structure.
@@ -91,6 +94,34 @@ public class SpellGrid {
             return null;
         }
         return gridData[xp][yp];
+    }
+
+    public SpellPiece getPieceAtSideWithRedirections(int x, int y, SpellParam.Side side)
+        throws SpellCompilationException {
+        return getPieceAtSideWithRedirections(x, y, side, new SpellPieceConsumer() {
+            @Override public void accept(SpellPiece piece) throws SpellCompilationException {}
+        });
+    }
+
+    /** Follows connector paths and calls {@code walker} for every connector traversed. */
+    public SpellPiece getPieceAtSideWithRedirections(int x, int y, SpellParam.Side side, SpellPieceConsumer walker)
+        throws SpellCompilationException {
+        Set<String> traversed = new HashSet<String>();
+        SpellPiece atSide;
+        while ((atSide = getPieceAtSideSafely(x, y, side)) instanceof IGenericRedirector) {
+            String state = atSide.x + ":" + atSide.y + ":" + side.ordinal();
+            if (!traversed.add(state)) throw new SpellCompilationException(SpellCompilationException.INFINITE_LOOP);
+            walker.accept(atSide);
+            side = ((IGenericRedirector) atSide).remapSide(side);
+            if (!side.isEnabled()) return null;
+            x = atSide.x;
+            y = atSide.y;
+        }
+        return atSide;
+    }
+
+    public interface SpellPieceConsumer {
+        void accept(SpellPiece piece) throws SpellCompilationException;
     }
 
     /** Move every piece one cell, without losing a spell at the grid edge. */
